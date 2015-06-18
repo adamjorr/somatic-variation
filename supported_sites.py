@@ -123,9 +123,11 @@ def match_alignment(splits, alignment):
 			#Support
 			if taxa1.issubset(split1) and taxa2.issubset(split2):
 				counters[str(split)][0] += 1
+				break
 			elif taxa1.issubset(split2) and taxa2.issubset(split1):
 				counters[str(split)][0] += 1
-
+				break
+				
 			#Zygosity Support
 			if homozygous.issubset(left_split) and heterozygous.issubset(right_split):
 				counters[str(split)][1] += 1
