@@ -77,11 +77,11 @@ def sites_zygosity(alignment, i):
 	if len(bases) == 1:
 		bases.extend([None])
 	if bases[0] in iupac_het:
-		homozygous_base = bases[0]
-		heterozygous_base = bases[1]
-	else:
 		homozygous_base = bases[1]
 		heterozygous_base = bases[0]
+	else:
+		homozygous_base = bases[0]
+		heterozygous_base = bases[1]
 	homozygous = [t.id for t in alignment if t.seq[i] == homozygous_base]
 	heterozygous = [t.id for t in alignment if t.seq[i] == heterozygous_base]
 	return (homozygous, heterozygous)
