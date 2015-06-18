@@ -102,6 +102,24 @@ def most_homozygous(alignment):
 
 	return max(pct_homo, key=lambda x : pct_homo[x])
 
+def split_support(splits,taxa1,taxa2):
+	#Return a list of splits this site supports
+	supporting = list()
+	for split in splits:
+		split1 = set(split[0])
+		split2 = set(split[1])
+		if taxa1.issubset(split1) and taxa2.issubset(split2):
+			supporting.append(split)
+		elif taxa1.issubset(split2) and taxa2.issubset(split1):
+			supporting.append(split)
+	return supporting
+
+def zygosity_support(splits,homozygous,heterozygous):
+
+def antizygosity_support(splits,homozygous,heterozygous):
+
+def incompatible_split(splits,homozygous,heterozygous):
+
 def match_alignment(splits, alignment):
 	root_taxon = most_homozygous(alignment)
 	counters = {str(split):[0]*4 for split in splits}
@@ -113,6 +131,9 @@ def match_alignment(splits, alignment):
 		homozygous = set(homozygous)
 		heterozygous = set(heterozygous)
 
+		supporting = split_support(splits,taxa1,taxa2)
+		for split in supporting: counters[str(split)][0] += float(1)/len(supporting)
+
 		#Possibly break this into its own function
 		for split in splits:
 			split1 = set(split[0])
@@ -120,14 +141,6 @@ def match_alignment(splits, alignment):
 			left_split = split1 if root_taxon in split1 else split2
 			right_split = split1 if root_taxon not in split1 else split2
 
-			#Support
-			if taxa1.issubset(split1) and taxa2.issubset(split2):
-				counters[str(split)][0] += 1
-				break
-			elif taxa1.issubset(split2) and taxa2.issubset(split1):
-				counters[str(split)][0] += 1
-				break
-				
 			#Zygosity Support
 			if homozygous.issubset(left_split) and heterozygous.issubset(right_split):
 				counters[str(split)][1] += 1
