@@ -72,18 +72,8 @@ def site_split(alignment, i):
 	return (taxa1, taxa2)
 
 def sites_zygosity(alignment, i):
-	bases = base_set(alignment,i)
-	bases = list(bases)
-	if len(bases) == 1:
-		bases.extend([None])
-	if bases[0] in iupac_het:
-		homozygous_base = bases[1]
-		heterozygous_base = bases[0]
-	else:
-		homozygous_base = bases[0]
-		heterozygous_base = bases[1]
-	homozygous = [t.id for t in alignment if t.seq[i] == homozygous_base]
-	heterozygous = [t.id for t in alignment if t.seq[i] == heterozygous_base]
+	homozygous = set([t.id for t in alignment if t.seq[i] in iupac_homo])
+	heterozygous = set([t.id for t in alignment if t.seq[i] in iupac_het])
 	return (homozygous, heterozygous)
 
 def num_sites(alignment):
@@ -92,6 +82,7 @@ def num_sites(alignment):
 def pct_homozygous(alignment):
 	num_hom = {record.id : len([b for b in record.seq if b in iupac_homo]) for record in alignment}
 	all_sts = {record.id : len([b for b in record.seq if b not in ['-','.','N']]) for record in alignment}
+	#return {k:float(v)/13068 for k,v in num_hom.iteritems()}
 	return {k:float(v)/all_sts[k] for k,v in num_hom.iteritems()}
 
 def most_homozygous(alignment):
@@ -114,11 +105,53 @@ def split_support(splits,taxa1,taxa2):
 			supporting.append(split)
 	return supporting
 
-def zygosity_support(splits,homozygous,heterozygous):
+def split_root(split,root_taxon):
+	if root_taxon in split[0]:
+		left_split = split[0]
+		right_split = split[1]
+	elif root_taxon in split[1]:
+		left_split = split[1]
+		right_split = split[0]
+	else:
+		raise ValueError('Root taxon not found in split: ' + str(split))
+	return (set(left_split),set(right_split))	
 
-def antizygosity_support(splits,homozygous,heterozygous):
+def zygosity_support(splits,homozygous,heterozygous,root_taxon):
+	supporting = list()
+	nonsupporting = list()
+	for split in splits:
+		(left_split, right_split) = split_root(split,root_taxon)
+		if homozygous.issubset(left_split) and heterozygous.issubset(right_split):
+			supporting.append(split)
+		if homozygous.issubset(right_split) and heterozygous.issubset(left_split):
+			nonsupporting.append(split)
+	return supporting, nonsupporting
 
-def incompatible_split(splits,homozygous,heterozygous):
+# def antizygosity_support(splits,homozygous,heterozygous,root_taxon):
+# 	supporting = list()
+# 	for split in splits:
+# 		(left_split, right_split) = split_root(split,root_taxon)
+# 		if homozygous.issubset(right_split) and heterozygous.issubset(left_split):
+# 			supporting.append(split)
+# 	return supporting
+
+def incompatible_split(splits,homozygous,heterozygous,root_taxon):
+	supporting = list()
+	for split in splits:
+		(left_split,right_split) = split_root(split,root_taxon)
+		left_split = set(left_split)
+		right_split = set(right_split)
+		if len(left_split & heterozygous) > 0 and len(left_split & homozygous) > 0:
+			if len(right_split & heterozygous) > 0 and len(right_split & homozygous) > 0:
+				supporting.append(split)
+	return supporting
+
+def increment_counter(counters,supporting,index):
+	for split in supporting: counters[str(split)][index] += float(1)/len(supporting)
+
+def zyg_counter(counters, supporting, nonsupporting, indices):
+	for split in supporting: counters[str(split)][indices[0]] += float(1)/len(supporting + nonsupporting)
+	for split in nonsupporting: counters[str(split)][indices[1]] += float(1)/len(supporting + nonsupporting)
 
 def match_alignment(splits, alignment):
 	root_taxon = most_homozygous(alignment)
@@ -131,28 +164,15 @@ def match_alignment(splits, alignment):
 		homozygous = set(homozygous)
 		heterozygous = set(heterozygous)
 
+		#Possibly break this into a function; refactor so looping is only done once
 		supporting = split_support(splits,taxa1,taxa2)
-		for split in supporting: counters[str(split)][0] += float(1)/len(supporting)
+		increment_counter(counters,supporting,0)
 
-		#Possibly break this into its own function
-		for split in splits:
-			split1 = set(split[0])
-			split2 = set(split[1])
-			left_split = split1 if root_taxon in split1 else split2
-			right_split = split1 if root_taxon not in split1 else split2
+		[zyg_supporting, antizyg_supporting] = zygosity_support(splits,homozygous,heterozygous,root_taxon)
+		zyg_counter(counters,zyg_supporting,antizyg_supporting,(1,2))
 
-			#Zygosity Support
-			if homozygous.issubset(left_split) and heterozygous.issubset(right_split):
-				counters[str(split)][1] += 1
-
-			#Anti-zygosity Support
-			if homozygous.issubset(right_split) and heterozygous.issubset(left_split):
-				counters[str(split)][2] += 1
-
-			#Incompatible Splits
-			if len(split1 & heterozygous) > 0 and len(split1 & homozygous) > 0:
-				if len(split2 & heterozygous) > 0 and len(split2 & homozygous) > 0:
-					counters[str(split)][3] += 1
+		incompatible = incompatible_split(splits,homozygous,heterozygous,root_taxon)
+		increment_counter(counters,incompatible,3)
 
 	return counters
 
@@ -160,7 +180,7 @@ def print_report(counters,alnlen):
 	print '\nAlignment length: ' + str(alnlen) + "\n"
 	for k,v in counters.iteritems():
 		w = [float(w)/alnlen for w in v]
-		print str(k) + "\t" + str(v) + " / " + "{0:.0%} {1:.0%} {2:.0%} {3:.0%}".format(w[0],w[1],w[2],w[3])
+		print str(k) + "\t" + "{0:.0%} {1:.0%} {2:.0%} {3:.0%}".format(w[0],w[1],w[2],w[3])
 	print ''
 
 def write_support_table(f,counters,alnlen):
