@@ -76,6 +76,17 @@ def diploidify(baselist):
 		constant = dummy
 	return constant,varied
 
+def remove_duplicate_seqs(alignment):
+	newseqs = list()
+	returnseqs = list()
+	for record in alignment:
+		sequence = record.seq
+		if sequence not in newseqs:
+			newseqs.append(record.seq)
+			record.seq = Seq(str(record.seq).replace('N','-'), record.seq.alphabet)
+			returnseqs.append(record)
+	return MultipleSeqAlignment(returnseqs)
+
 def main():
 	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
 	parser.add_argument("-i","--input", help="input file")
@@ -94,7 +105,7 @@ def main():
 
 	seqs = AlignIO.read(filein,filetype)
 	newalignment= [''] * seqs.get_alignment_length()
-	for i in range(0,(seqs.get_alignment_length() - 1)):
+	for i in range(0,seqs.get_alignment_length()):
 		baselist = list(seqs[:,i])
 		if not (is_valid_site(baselist) and is_biallelic(baselist)): continue
 		c, v = diploidify(baselist)
@@ -113,6 +124,7 @@ def main():
 
 	newseqobjs = [SeqRecord(Seq(newalignment[i], IUPAC.unambiguous_dna), id=seqs[i].id, description='') for i in range(0,len(seqs))]
 	newalnobj = MultipleSeqAlignment(newseqobjs)
+	newalnobj = remove_duplicate_seqs(newalnobj)
 	AlignIO.write(newalnobj,fileout,outtype)
 
 if __name__ == '__main__':
