@@ -19,7 +19,7 @@ tree <- read.tree(args[3])
 largenodenum <- which(tree$tip.label==largesample)
 tree <- reroot(tree,largenodenum,tree$edge.length[which(tree$edge[,2]==largenodenum)])
 othersamples <- tree$tip.label[tree$tip.label != largesample]
-plot(tree, show.tip.label = FALSE, no.margin = TRUE)
+plot(tree, show.tip.label = FALSE, no.margin = TRUE, y.lim = c(0,9))
 
 numtips <- length(tree$tip.label)
 #intedges <- which(!apply(tree$edge,1,function(x) x[1] <= numtips | x[2] <= numtips),arr.ind = TRUE)
