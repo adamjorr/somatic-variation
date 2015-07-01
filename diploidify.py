@@ -89,9 +89,9 @@ def remove_duplicate_seqs(alignment):
 
 def main():
 	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
-	parser.add_argument("-i","--input", help="input file")
+	parser.add_argument("-i","--input", help="input file (default: stdin)")
 	parser.add_argument("-t","--type", help="filetype (default: phylip-relaxed)", default="phylip-relaxed")
-	parser.add_argument("-o","--output",help="output file")
+	parser.add_argument("-o","--output",help="output file (default: stdout)")
 	parser.add_argument("-p","--outtype",help="output filetype (default: phylip-relaxed)", default="phylip-relaxed")
 	parser.add_argument("-v","--variable",help="only output variable sites",action="store_true")
 	parser.add_argument("-s","--skip",help="keep single-letter notation but keep other checks",action="store_true")
