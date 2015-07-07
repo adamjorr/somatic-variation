@@ -44,7 +44,8 @@ for (i in 1:length(supportsites[,1])){
   edgelabels(supportsites[i,4],splitedge,bg=mycolors[3],adj=c(.5,2.1))
   edgelabels(supportsites[i,5],splitedge,bg=mycolors[4],adj=c(.5,3.7))
 }
-tiplabels(sapply(tree$tip.label, FUN=function(x) substr(x,1,nchar(x)-1)),frame="none",adj=-.25)
+#tiplabels(sapply(tree$tip.label, FUN=function(x) substr(x,1,nchar(x)-1)),frame="none",adj=-.25)
+tiplabels(tree$tip.label,frame="none",adj=-.25)
 legend('topright',c('% of supporting sites','% of sites indicating a homozygous -> heterozygous \n mutation occured here','% of sites indicating a heterozygous -> homozygous \n mutation occured here','% of sites with a homozygote \n and a heterozygote on both sides'), fill = mycolors, cex = .9, y.intersp=2, bty='n')
 
 dev.off()

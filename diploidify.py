@@ -27,9 +27,17 @@ iupac = {
 	'W' : 'AT',
 	'K' : 'GT',
 	'M' : 'AC',
+	'N' : 'NN',
 	'.' : '..',
 	'-' : '--'
 }
+
+gaps = {
+	'N' : 'NN',
+	'.' : '..',
+	'-' : '--'
+}
+
 
 # There might be a case A/G -> A/T -> A/A = RWA at one site.
 # But this is most likely an artifact so we filter it.
@@ -44,7 +52,7 @@ def is_biallelic(baselist):
 
 def unique_list_size(alist):
 	"Returns the size of a unique version of the input list (ignoring gaps)"
-	blist = [a for a in alist if a != '-' and a != '.']
+	blist = [a for a in alist if a not in gaps.keys()]
 	return len(dict(zip(blist,blist)))
 
 def is_single_mutation(constantlist, variedlist):
@@ -105,7 +113,7 @@ def main():
 
 	seqs = AlignIO.read(filein,filetype)
 	newalignment= [''] * seqs.get_alignment_length()
-	for i in range(0,seqs.get_alignment_length()):
+	for i in range(0,seqs.get_alignment_length()-1):
 		baselist = list(seqs[:,i])
 		if not (is_valid_site(baselist) and is_biallelic(baselist)): continue
 		c, v = diploidify(baselist)
