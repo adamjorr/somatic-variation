@@ -1,5 +1,6 @@
 #!usr/bin/bash
 #bash vcf2tree.sh file.vcf
+#Takes file.vcf, filters it using replicate info at various stringencies, and plots the trees.
 
 PATHTOVCFALNER=~/code/perl/vcf_tab_to_fasta_alignment.pl
 PATHTOZYPY=.
