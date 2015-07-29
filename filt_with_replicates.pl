@@ -14,11 +14,15 @@ perl filt_with_replicates.pl [-s | --strict] [-g | --grouped int] [-h | -? | --h
 
 Options:
 
+=over 8
+
 =item --help		Prints help information
 
 =item --grouped		VCF samples aren't named, but in groups of int.
 
 =item --strict		Use strict filtering
+
+=back
 
 =head1 OPTIONS
 
