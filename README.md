@@ -1,2 +1,3 @@
 # zypy
-WIP for working with heterozygous sequences and alignments in Python
+WIP
+Only slightly related to working with heterozygous sequences and not even really that much Python

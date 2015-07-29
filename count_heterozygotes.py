@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 #python count_heterozygotes.py filein filetype
-
+"""
+Deprecated
+"""
 
 import sys
 import diploidify

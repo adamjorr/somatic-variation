@@ -42,28 +42,28 @@ gaps = {
 # There might be a case A/G -> A/T -> A/A = RWA at one site.
 # But this is most likely an artifact so we filter it.
 def is_valid_site(baselist):
-	"Returns TRUE if we have an iupac entry for all the sites; false otherwise"
+	"""Returns TRUE if we have an iupac entry for all the sites; false otherwise"""
 	if False in [b in iupac.keys() for b in baselist]: return False
 	return True
 
 def is_biallelic(baselist):
-	"Returns TRUE if list of bases is biallelic; false otherwise"
+	"""Returns TRUE if list of bases is biallelic; false otherwise"""
 	return unique_list_size(baselist) < 3
 
 def unique_list_size(alist):
-	"Returns the size of a unique version of the input list (ignoring gaps)"
+	"""Returns the size of a unique version of the input list (ignoring gaps)"""
 	blist = [a for a in alist if a not in gaps.keys()]
 	return len(dict(zip(blist,blist)))
 
 def is_single_mutation(constantlist, variedlist):
-	"Returns TRUE if only a single mutation occured at this site; false otherwise"
+	"""Returns TRUE if only a single mutation occured at this site; false otherwise"""
 	if unique_list_size(constantlist) == 1 and unique_list_size(variedlist) == 2: return True
 	if unique_list_size(variedlist) == 1 and unique_list_size(constantlist) == 2: return True 
 	if unique_list_size(constantlist) == unique_list_size(variedlist) == 1: return True
 	return False
 
 def diploidify(baselist):
-	"Makes every site 2 sites based on IUPAC codes"
+	"""Makes every site 2 sites based on IUPAC codes"""
 	constant = [iupac[baselist[0]][0]]
 	varied = [iupac[baselist[0]][1]]
 	for b in range(1,len(baselist)):
@@ -85,6 +85,7 @@ def diploidify(baselist):
 	return constant,varied
 
 def remove_duplicate_seqs(alignment):
+	"""Remove duplicate sequences in the alignment; the replicates will all have identical sequences"""
 	newseqs = list()
 	returnseqs = list()
 	for record in alignment:
@@ -116,6 +117,7 @@ def main():
 	for i in range(0,seqs.get_alignment_length()-1):
 		baselist = list(seqs[:,i])
 		if not (is_valid_site(baselist) and is_biallelic(baselist)): continue
+		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist)
 		if not is_single_mutation(c,v): continue
 		
