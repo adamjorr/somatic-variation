@@ -48,8 +48,8 @@ for (i in 1:length(supportsites[,1])){
 
 #These labelling / legend things need adjustment sometimes
 
-samplenumbers <- sort(sapply(tree$tip.label, FUN = function(x) strtoi(substr(x,2,nchar(x)))))
-samplenumbers <- sapply(samplenumbers, FUN = function(x) paste0('M',which(samplenumbers %in% x)))
+samplenumbers <- sort(sapply(tree$tip.label, FUN = function(x) regmatches(x,regexpr('.[0-9].',x))))
+# samplenumbers <- sapply(samplenumbers, FUN = function(x) sub('M2c','M3a',x))
 #tiplabels(sapply(tree$tip.label, FUN=function(x) substr(x,1,nchar(x)-1)),frame="none",adj=-.25)
 #tiplabels(tree$tip.label,frame="none",adj=-.25)
 tiplabels(sapply(tree$tip.label, FUN=function(x) samplenumbers[x]),frame="none",adj=-.25)
