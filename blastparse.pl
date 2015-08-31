@@ -26,7 +26,7 @@ print join("\t" , qw(disco_id chr disco gatkloc gt)) , "\n";
 while (<$infh>){
 	chomp;
 	(my $id, my $matchid, my $qstart, my $alnlen, my $sstart) = (split('\t',$_))[0,1,4,5,7];
-	my $lunitiglen = (split('_',(split('\|',$id))[4]))[-1];
+	my $lunitiglen = (split('_',(split('\|',$id))[6]))[-1];
 	my $discogt = (split('_',(split('\|',$id))[1]))[-1];
 
 	next if $qstart > $lunitiglen;
