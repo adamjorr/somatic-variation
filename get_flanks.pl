@@ -7,7 +7,7 @@ get_flanks - Get flanking sequences for a SNP from DiscoSNP++
 
 =head1 SYNOPSIS
 
-perl get_flanks.pl [-v | --vcf snps.vcf] [-h | -? | --help] <discosnp.fasta >out.fasta
+perl get_flanks.pl [-d | --discosnp snps.vcf] [-v | --vcf snps.vcf] [-r | --ref reference.fasta] [-h | -? | --help] <discosnp.fasta >out.fasta
 
 Use perldoc get_flanks.pl for even more help.
 
@@ -64,29 +64,107 @@ use Pod::Usage;
 
 my $vcffile;
 my $help = 0;
-GetOptions(	'vcf|v=s' => \$vcffile,
+my $reffile;
+my $discofile;
+GetOptions(	'discosnp|d=s' => \$discofile,
+			'vcf|v=s' => \$vcffile,
+			'ref|r=s' => \$reffile,
 			'help|h|?' => \$help);
 pod2usage(1) if $help;
-die "Cannot read $vcffile" unless -r $vcffile;
+die "Cannot read $discofile" unless -r $discofile;
 
-my @ids = ids_from_vcf($vcffile);
-print_fasta(@ids);
+my %chr_seq = chr_ids($reffile);
+my @dids = dids_from_vcf($discofile);
+print_fasta(@dids);
 exit;
 
 
 # -----------------------
 
+sub chr_seq{
+	my $reffile = shift;
+	my %chrids;
+	my $seqio = Bio::SeqIO->newFh(-format => 'Fasta', -file => $reffile);
+	while(<$seqio>){
+		$chrids{$_ -> id()} = $_ -> seq();
+	}
+	return %chrids;
+}
 
-sub ids_from_vcf{
-	$vcffile = shift;
-	my @ids;
+sub dids_from_vcf{
+	my $vcffile = shift;
+	my %chr_seq = shift;
+	my %ids;
 	my $vcf = Vcf->new(file=>"$vcffile");
 	$vcf->parse_header();
 	while (my $x = $vcf -> next_data_array()){
-		push(@ids, $$x[0]);
+		my $chr = $$x[0];
+		if (any {$_ == $chr} keys %chr_seq){
+			$ids{$$x[2]} = {'chr' => $chr, 'pos' => $$x[1]};
+		}
+		else{
+			$ids{$$x[2]} = {'chr' => '', 'pos' => ''};
+		}
 	}
-	return @ids;
+	return %ids;
 }
+
+sub flanking_ref{
+	my $chr = shift;
+	my $pos = shift;
+	my $flanksize = shift;
+	my %chrids = shift;
+
+	my $seq = $chrids{$chr};
+	my $startloc;
+	if ($flanksize > $pos + 1){
+		$startloc = 0;
+	}
+	else{
+		$startloc = $pos + 1 - $flanksize;
+	}
+
+	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos,1)) . lc(substr($seq, $pos + 1, $flanksize));
+
+}
+
+sub flanking_disco{
+	my %did_seq = shift;
+	my $id = shift;
+	my $pos = shift;
+
+	my $seq = $did_seq{$id};
+	return lc(substr($seq,0,$pos)) . uc(substr($seq,$pos,1)) . lc(substr($seq,$pos + 1));
+}
+
+sub discoid_seq{
+	my %did_seq;
+	my $seqio = Bio::SeqIO->newFh(-format => 'Fasta', -fh => \*STDIN);
+	while (<$seqio>){
+		my $full_id = $_ -> id();
+		my $id = (split('_',(split('\|',$full_id))[0]))[-1];
+		$did_seq{$id} = $_ -> seq();
+	}
+}
+
+sub othervcflocs{
+	my $vcffile = shift;
+	my %chr_seq = shift;
+	my %ids;
+	my $counter = 0;
+
+	my $vcf = Vcf->new(file=>"$vcffile");
+	while (my $x = $vcf -> next_data_array()){
+		my $chr = $$x[0];
+		my $pos = $$x[1];
+		$ids{$counter} = {'chr' => $chr, 'pos' => $pos}
+	}
+}
+
+
+
+
+
 
 sub print_fasta{
 	my @ids = @_;
@@ -112,3 +190,12 @@ sub print_fasta{
 }
 
 __END__
+
+Output 3 files: unique DISCOSNP variants, unique GATK variants, and both variants.
+DISCOSNP variants should have a DISCOSNP ID, LOCATION, FLANKS.
+GATK variants should have a LOCATION, FLANKS.
+
+
+
+
+
