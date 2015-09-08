@@ -64,6 +64,7 @@ use Pod::Usage;
 
 my $vcffile;
 my $help = 0;
+my $flanksize = 200;
 my $reffile;
 my $discofile;
 GetOptions(	'discosnp|d=s' => \$discofile,
@@ -73,9 +74,7 @@ GetOptions(	'discosnp|d=s' => \$discofile,
 pod2usage(1) if $help;
 die "Cannot read $discofile" unless -r $discofile;
 
-my %chr_seq = chr_ids($reffile);
-my @dids = dids_from_vcf($discofile);
-print_fasta(@dids);
+print_output();
 exit;
 
 
@@ -88,32 +87,34 @@ sub chr_seq{
 	while(<$seqio>){
 		$chrids{$_ -> id()} = $_ -> seq();
 	}
-	return %chrids;
+	return \%chrids;
 }
 
 sub dids_from_vcf{
 	my $vcffile = shift;
-	my %chr_seq = shift;
+	my $chr_seq_ref = shift;
+	my %chr_seq = %$chr_seq_ref;
 	my %ids;
 	my $vcf = Vcf->new(file=>"$vcffile");
 	$vcf->parse_header();
 	while (my $x = $vcf -> next_data_array()){
 		my $chr = $$x[0];
-		if (any {$_ == $chr} keys %chr_seq){
+		if (any {$_ eq $chr} keys %chr_seq){
 			$ids{$$x[2]} = {'chr' => $chr, 'pos' => $$x[1]};
 		}
 		else{
-			$ids{$$x[2]} = {'chr' => '', 'pos' => ''};
+			$ids{$$x[2]} = {'chr' => '', 'pos' => $$x[1]};
 		}
 	}
-	return %ids;
+	return \%ids;
 }
 
 sub flanking_ref{
 	my $chr = shift;
 	my $pos = shift;
 	my $flanksize = shift;
-	my %chrids = shift;
+	my $chridsref = shift;
+	my %chrids = %$chridsref;
 
 	my $seq = $chrids{$chr};
 	my $startloc;
@@ -123,49 +124,137 @@ sub flanking_ref{
 	else{
 		$startloc = $pos + 1 - $flanksize;
 	}
-
 	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos,1)) . lc(substr($seq, $pos + 1, $flanksize));
-
 }
 
 sub flanking_disco{
-	my %did_seq = shift;
+	my $did_seqref = shift;
+	my %did_seq = %$did_seqref;
 	my $id = shift;
 	my $pos = shift;
 
 	my $seq = $did_seq{$id};
+	die "Can't find seq for $id!" unless $seq;
 	return lc(substr($seq,0,$pos)) . uc(substr($seq,$pos,1)) . lc(substr($seq,$pos + 1));
 }
 
 sub discoid_seq{
 	my %did_seq;
+	my %did_loc;
 	my $seqio = Bio::SeqIO->newFh(-format => 'Fasta', -fh => \*STDIN);
 	while (<$seqio>){
 		my $full_id = $_ -> id();
 		my $id = (split('_',(split('\|',$full_id))[0]))[-1];
 		$did_seq{$id} = $_ -> seq();
+
+		my $loc = (split(':',(split('_',(split('\|',$full_id))[1]))[1]))[1] + (split('_',(split('\|',$full_id))[6]))[-1];
+		$did_loc{$id} = $loc;
 	}
+	return (\%did_seq , \%did_loc);
 }
 
 sub othervcflocs{
 	my $vcffile = shift;
-	my %chr_seq = shift;
+	my $chr_seq_ref = shift;
+	my %chr_seq = %$chr_seq_ref;
 	my %ids;
 	my $counter = 0;
 
 	my $vcf = Vcf->new(file=>"$vcffile");
+	$vcf -> parse_header();
 	while (my $x = $vcf -> next_data_array()){
 		my $chr = $$x[0];
 		my $pos = $$x[1];
-		$ids{$counter} = {'chr' => $chr, 'pos' => $pos}
+		$ids{$counter} = {'chr' => $chr, 'pos' => $pos};
+		$counter++;
 	}
+	return \%ids;
 }
 
+sub find_mutual_snps{
+	#(%left, %both, %right)
+	my $did_locr = shift;
+	my $otherid_locr = shift;
+	my %did_loc = %$did_locr;
+	my %otherid_loc = %$otherid_locr;
+	my %left;
+	my %both;
+	my %right;
+
+	for my $key (sort keys %did_loc){
+		my $dloc = $did_loc{$key};
+		if (any {$otherid_loc{$_}->{'chr'} eq $dloc->{'chr'} && $otherid_loc{$_}->{'pos'} == $dloc->{'pos'}} keys %otherid_loc){
+			$both{$key} = $did_loc{$key};
+		}
+		else{
+			$left{$key} = $did_loc{$key};
+		}
+	}
+
+	for my $key (sort keys %otherid_loc){
+		if (! any {%{$did_loc{$_}} == %{$otherid_loc{$key}}} ){
+			$right{$key} = $otherid_loc{$key};
+		}
+	}
+	return (\%left, \%both, \%right);
+}
+
+sub print_output{
+	my $chr_seq_ref = chr_seq($reffile);
+	my $didsr = dids_from_vcf($discofile, $chr_seq_ref);
+	my $otherids = othervcflocs($vcffile, $chr_seq_ref);
+	(my $donlyr, my $bothr, my $otheronlyr) = find_mutual_snps($didsr, $otherids);
+	my %donly = %$donlyr;
+	my %both = %$bothr;
+	my %otheronly = %$otheronlyr;
+
+	(my $dseqsr, my $dlocr) = discoid_seq();
+	my %dseqs = %$dseqsr;
+	my %dlocs = %$dlocr;
+	my %discoflanks;
+	my %otherflanks;
+	open(my $discofh, ">", 'discoflanks.txt') or die $!;
+	open(my $bothfh, ">", 'bothflanks.txt') or die $!;
+	open(my $otherfh, ">", 'gatkflanks.txt') or die $!;
+	print{$discofh}(join("\t",qw'DISCOSNP_ID LOC FLANKS'),"\n");
+	print{$bothfh}(join("\t",qw'DISCOSNP_ID LOC FLANKS'),"\n");
+	print{$otherfh}(join("\t",qw'LOC FLANKS'),"\n");
 
 
+	for my $key (sort keys %donly){
+		my $pos = $donly{$key}->{'pos'};
+		my $flanks = flanking_disco($dseqsr, $key, $dlocs{$key});
+		my $chr = $donly{$key}->{'chr'};
+		if ($chr){
+			print{$discofh}(join("\t",$key, $chr . $pos, $flanks),"\n");	
+		}
+		else{
+			print{$discofh}(join("\t",$key, '', $flanks),"\n");	
+		}
+		
+	}
+	close $discofh;
 
+	for my $key (sort keys %both){
+		my $pos = $both{$key}->{'pos'};
+		my $flanks = flanking_disco($dseqsr, $key, $dlocs{$key});
+		print{$bothfh}(join("\t",$key, $both{$key}->{'chr'} . $pos, $flanks),"\n");
+	}
+	close $bothfh;
 
+	for my $key (sort keys %otheronly){
+		my $pos = $otheronly{$key}->{'pos'};
+		my $chr = $otheronly{$key}->{'chr'};
+		my $flanks = flanking_ref($chr, $pos, $flanksize, $chr_seq_ref );
+		print{$otherfh}(join("\t",$chr . $pos, $flanks),"\n");
+	}
+	close $otherfh;
 
+}
+
+# ------------------
+# DEPRECATED
+# ------------------
 sub print_fasta{
 	my @ids = @_;
 	my $seqio = Bio::SeqIO->newFh(-format => 'Fasta', -fh => \*STDIN);
@@ -191,10 +280,8 @@ sub print_fasta{
 
 __END__
 
-Output 3 files: unique DISCOSNP variants, unique GATK variants, and both variants.
-DISCOSNP variants should have a DISCOSNP ID, LOCATION, FLANKS.
-GATK variants should have a LOCATION, FLANKS.
-
+Fix disco flanks; the position is not correctly given.
+Pos is inaccurate if the SNP is mapped
 
 
 
