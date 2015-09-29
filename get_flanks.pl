@@ -249,7 +249,7 @@ sub print_output{
 		print{$otherfh}(join("\t",$chr . $pos, $flanks),"\n");
 	}
 	close $otherfh;
-
+	exit;
 }
 
 # ------------------
@@ -280,9 +280,13 @@ sub print_fasta{
 
 __END__
 
-Fix disco flanks; the position is not correctly given.
-Pos is inaccurate if the SNP is mapped
+Flanks look good.
+Fix documentation.
 
-
+-d discosnp vcf
+-v other vcf
+-r reference fasta
+stdin discosnp fasta
+prints to 3 files
 
 
