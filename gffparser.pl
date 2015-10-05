@@ -5,6 +5,7 @@ use warnings;
 use Bio::Tools::GFF;
 use Getopt::Long;
 use Number::Closest;
+use List::MoreUtils;
 
 my $gff_file;
 my $annotation_file;
@@ -40,17 +41,35 @@ my $gffio = Bio::Tools::GFF->new(-file => $gff_file, -gff_version => 3);
 
 while(my $feature = $gffio->next_feature()) {
 	next unless $feature -> primary_tag() eq 'gene';
-	my $location = $feature -> location();
+	my $chr = $feature -> seq_id();
+	$locations{$chr} = {} unless exists $locations{$chr};
+
 	my $name = ($feature -> get_tag_values('Name'))[0];
-	$locations{$feature->start} = $name;
-	$locations{$feature->end} = $name;
+	$locations{$chr} -> {$feature->start} = $name;
+	$locations{$chr} -> {$feature->end} = $name;
     # print join("\t", $feature-> seq_id(), $feature->start, $feature->end, $name, $annot{$name}->{'name'}) , "\n";
     # $counter++;
     # exit if $counter > 10;
 }
 
-for $F in genes{
-	my $closestgene = Number::Clostst->new(number => )
+for my $snp in @snps{
+	my $chr;
+	my $location;
+	my @all_locs = sort keys $locations{$chr};
+	my $closefinder = Number::Closest->new(number => $location, numbers => \@all_locs);
+	my $closest = $closefinder -> find;
+	my $closestgene = $locations{$chr}->{$closest};
+	my $distance = abs($closest - $location);
+	my $genename = $annot{$closestgene}->{'name'};
+	my $gocat = $annot{$closestgene}->{'go'};
+	my $ingene;
+	if (first_index {$_ > $location} @all_locs % 2 == 0){ #if 1st loc after snp is even
+		#it's the start of a gene and so is out of a gene
+		$ingene = 0;
+	}
+	else{#it's in a gene
+		$ingene = 1;
+	}
 }
 
 
