@@ -246,7 +246,7 @@ sub print_output{
 		my $flanks = flanking_disco($dseqsr, $key, $dlocs{$key});
 		my $chr = $donly{$key}->{'chr'};
 		if ($chr){
-			print{$discofh}(join("\t",$key, $chr . $pos, $flanks),"\n");	
+			print{$discofh}(join("\t",$key, $chr . ':' .  $pos, $flanks),"\n");	
 		}
 		else{
 			print{$discofh}(join("\t",$key, '', $flanks),"\n");	
@@ -258,7 +258,7 @@ sub print_output{
 	for my $key (sort keys %both){
 		my $pos = $both{$key}->{'pos'};
 		my $flanks = flanking_disco($dseqsr, $key, $dlocs{$key});
-		print{$bothfh}(join("\t",$key, $both{$key}->{'chr'} . $pos, $flanks),"\n");
+		print{$bothfh}(join("\t",$key, $both{$key}->{'chr'} . ':' . $pos, $flanks),"\n");
 	}
 	close $bothfh;
 
@@ -266,7 +266,7 @@ sub print_output{
 		my $pos = $otheronly{$key}->{'pos'};
 		my $chr = $otheronly{$key}->{'chr'};
 		my $flanks = flanking_ref($chr, $pos, $flanksize, $chr_seq_ref );
-		print{$otherfh}(join("\t",$chr . $pos, $flanks),"\n");
+		print{$otherfh}(join("\t",$chr . ':' . $pos, $flanks),"\n");
 	}
 	close $otherfh;
 	exit;
