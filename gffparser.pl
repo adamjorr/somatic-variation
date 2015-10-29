@@ -16,11 +16,13 @@ my %locations;
 my %names;
 my $help = 0;
 my $counter = 0;
+my $grouped = 1;
 
 GetOptions(	'gff|g=s' => \$gff_file,
 			'annotation|a=s' => \$annotation_file,
 			'flanks|f=s' => \$flanks_file,
-			'vcf|v=s' => \$vcf_file;
+			'vcf|v=s' => \$vcf_file,
+			'replicates|r=i' => \$grouped,
 			'help|h|?' => \$help);
 
 pod2usage(1) if $help;
@@ -45,9 +47,9 @@ while(<$annotfh>){
 # exit;
 
 my $gffio = Bio::Tools::GFF->new(-file => $gff_file, -gff_version => 3);
-
-while(my $feature = $gffio->next_feature()) {
-	my $feat = $feature-> primary_tage();
+my %cds_locations;
+while (my $feature = $gffio->next_feature() ){
+	my $feat = $feature-> primary_tag();
 	if ($feat eq 'gene' or $feat eq 'CDS'){
 		my $chr = $feature -> seq_id();
 		if ($feat eq 'gene'){
@@ -58,6 +60,7 @@ while(my $feature = $gffio->next_feature()) {
 		    # print join("\t", $feature-> seq_id(), $feature->start, $feature->end, $name, $annot{$name}->{'name'}) , "\n";
 		    # $counter++;
 		    # exit if $counter > 10;
+		}
 		else{
 			$cds_locations{$chr} = [] unless exists $locations{$chr};
 			push(@{$cds_locations{$chr}},$feature->start);
@@ -67,9 +70,9 @@ while(my $feature = $gffio->next_feature()) {
 }
 
 my %locs;
-for my $chr in (sort keys %locations){
+for my $chr (sort keys %locations){
 	my @all_locs = sort keys $locations{$chr};
-	sort(@{$cds_locations{$chr}});
+	$cds_locations{$chr} = [sort(@{$cds_locations{$chr}})];
 	$locs{$chr} = \@all_locs;
 }
 
@@ -77,22 +80,30 @@ my %flanks;
 open (my $ffh, "<", $flanks_file) or die $!;
 while (<$ffh>){
 	chomp;
-	my $id, my $loc, my $flank = split("\t");
+	(my $id, my $loc, my $flank) = split("\t");
 	$flanks{$loc} = $flank;
 }
+close $ffh or die $!;
 
 
 my $vcf = Vcf->new(file=>"$vcf_file");
 my $vcfheader = $vcf->parse_header();
-print $vcfheader;
-exit;
+my @samples = $vcf -> get_samples();
+my @sampleindex;
+for (my $i = 0; $i < scalar(@samples); $i+=$grouped){
+	push(@sampleindex, $vcf->get_column_index($samples[$i]));
+}
 
 
-while (my $x = $vcf->next_data_aray()){
+
+print join("\t", "snp", 1 .. scalar(@sampleindex), "loc", "gene", "distance", "go_terms", "coding_mut", "substitution") , "\n";
+
+while (my $x = $vcf->next_data_array()){
 	my $chr = $$x[0];
 	my $location = $$x[1];
-	my $coordinate = $chr . ':' $location;
+	my $coordinate = $chr . ':' . $location;
 	my $flank = $flanks{$coordinate};
+	next unless $flank;
 	my @cds_locs = @{$cds_locations{$chr}};
 	my $closefinder = Number::Closest->new(number => $location, numbers => $locs{$chr});
 	my $closest = $closefinder -> find;
@@ -108,10 +119,13 @@ while (my $x = $vcf->next_data_aray()){
 	else{#it's in a CDS
 		$in_CDS = 1;
 	}
+	my @muts = map{$$x[$_]} @sampleindex;
+	print join("\t", $flank, @muts, $coordinate, $genename, $distance, $gocat, $in_CDS, "-"),"\n"
 }
 
 
 $gffio -> close();
+exit;
 
 __END__
 
