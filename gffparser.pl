@@ -138,3 +138,5 @@ __END__
 6. GO categories	x
 7. Mutation in CDS or not	x
 8. AA change if in CDS
+
+TODO:Some SNPs aren't getting their closest gene name and GO terms!!!
