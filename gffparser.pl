@@ -5,7 +5,7 @@ use warnings;
 use Bio::Tools::GFF;
 use Getopt::Long;
 use Number::Closest;
-use List::MoreUtils;
+use List::MoreUtils qw/firstidx/;
 use Vcf;
 
 my $gff_file;
@@ -62,7 +62,7 @@ while (my $feature = $gffio->next_feature() ){
 		    # exit if $counter > 10;
 		}
 		else{
-			$cds_locations{$chr} = [] unless exists $locations{$chr};
+			$cds_locations{$chr} = [] unless exists $cds_locations{$chr};
 			push(@{$cds_locations{$chr}},$feature->start);
 			push(@{$cds_locations{$chr}},$feature->end);
 		}
@@ -112,14 +112,15 @@ while (my $x = $vcf->next_data_array()){
 	my $genename = $annot{$closestgene}->{'name'};
 	my $gocat = $annot{$closestgene}->{'go'};
 	my $in_CDS;
-	if (first_index {$_ > $location} @cds_locs % 2 == 0){ #if 1st loc after snp is even
+	my $firstindex = List::MoreUtils::firstidx { $_ > $location } @cds_locs;
+	if ($firstindex % 2 == 0){ #if 1st loc after snp is even
 		#it's the start of a CDS and so is out of a CDS
 		$in_CDS = 0;
 	}
 	else{#it's in a CDS
 		$in_CDS = 1;
 	}
-	my @muts = map{$$x[$_]} @sampleindex;
+	my @muts = map{(split(':',$$x[$_]))[0]} @sampleindex;
 	print join("\t", $flank, @muts, $coordinate, $genename, $distance, $gocat, $in_CDS, "-"),"\n"
 }
 
