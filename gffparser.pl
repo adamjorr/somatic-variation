@@ -123,6 +123,9 @@ while (my $x = $vcf->next_data_array()){
 	my $old_aa;
 	my $new_aa;
 	my @muts = map{(split(':',$$x[$_]))[0]} @sampleindex;
+	my %gt = ('0' => $$x[3], '1' => $$x[4]);
+	@muts = map{join("/",(map {$gt{$_}} split("/",$_)))} @muts;
+	#@muts = map{join("/",map {$gt{$_}} split("/",$_))} @muts;
 
 	my $firstindex = List::MoreUtils::firstidx { $_ > $location } @cds_locs;
 	if ($firstindex % 2 == 0){ #if 1st loc after snp is even
