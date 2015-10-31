@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Bio::Tools::GFF;
+use Bio::Tools::CodonTable;
 use Getopt::Long;
 use Number::Closest;
 use List::MoreUtils qw/firstidx/;
@@ -62,17 +63,22 @@ while (my $feature = $gffio->next_feature() ){
 		    # exit if $counter > 10;
 		}
 		else{
-			$cds_locations{$chr} = [] unless exists $cds_locations{$chr};
-			push(@{$cds_locations{$chr}},$feature->start);
-			push(@{$cds_locations{$chr}},$feature->end);
+			my $phase = $feature->frame;
+			#print $gffio->gff_string($feature),"\n";
+			#print $feature->frame,"\n";
+			$cds_locations{$chr} = {} unless exists $cds_locations{$chr};
+			$cds_locations{$chr} -> {$feature->start} = $phase;
+			$cds_locations{$chr} -> {$feature->end} = $phase;
 		}
 	}
 }
 
 my %locs;
+my %cds_locs;
 for my $chr (sort keys %locations){
-	my @all_locs = sort keys $locations{$chr};
-	$cds_locations{$chr} = [sort(@{$cds_locations{$chr}})];
+	my @all_locs = sort {$a <=> $b} keys $locations{$chr};
+	my @all_cds_locs = sort{$a <=> $b} keys $cds_locations{$chr};
+	$cds_locs{$chr} = \@all_cds_locs;
 	$locs{$chr} = \@all_locs;
 }
 
@@ -104,24 +110,43 @@ while (my $x = $vcf->next_data_array()){
 	my $coordinate = $chr . ':' . $location;
 	my $flank = $flanks{$coordinate};
 	next unless $flank;
-	my @cds_locs = @{$cds_locations{$chr}};
+	#print join("\t",@{$locs{$chr}}), "\n";
+	my @cds_locs = @{$cds_locs{$chr}};
 	my $closefinder = Number::Closest->new(number => $location, numbers => $locs{$chr});
 	my $closest = $closefinder -> find;
 	my $closestgene = $locations{$chr}->{$closest};
 	my $distance = abs($closest - $location);
-	my $genename = $annot{$closestgene}->{'name'};
+	my $genename = $annot{$closestgene}->{'name'} || $closestgene;
 	my $gocat = $annot{$closestgene}->{'go'};
 	my $in_CDS;
+	my $phase;
+	my $old_aa;
+	my $new_aa;
+	my @muts = map{(split(':',$$x[$_]))[0]} @sampleindex;
+
 	my $firstindex = List::MoreUtils::firstidx { $_ > $location } @cds_locs;
 	if ($firstindex % 2 == 0){ #if 1st loc after snp is even
 		#it's the start of a CDS and so is out of a CDS
 		$in_CDS = 0;
+		print join("\t", $flank, @muts, $coordinate, $genename, $distance, $gocat, $in_CDS,""),"\n";
 	}
 	else{#it's in a CDS
 		$in_CDS = 1;
+		$phase = $cds_locations{$chr} -> {$cds_locs[$firstindex]};
+		my $firstbaseloc = $cds_locs[$firstindex - 1] + $phase;
+		my $snp_codon_pos = (($location - $firstbaseloc) % 3);
+		$flank =~ m/[ATCG]/;
+		my $snp_flank_pos = $-[0];
+		my $old_codon = substr($flank, $snp_flank_pos - $snp_codon_pos, 3);
+		my $new_codon = $old_codon;
+		substr($new_codon,$snp_codon_pos,1,$$x[4]);
+		#print $new_codon, "\t", $old_codon, "\n";
+		my $codontable = Bio::Tools::CodonTable->new();
+		$old_aa = $codontable->translate($old_codon);
+		$new_aa = $codontable->translate($new_codon);
+		print join("\t", $flank, @muts, $coordinate, $genename, $distance, $gocat, $in_CDS, $old_aa . "/" . $new_aa),"\n";
 	}
-	my @muts = map{(split(':',$$x[$_]))[0]} @sampleindex;
-	print join("\t", $flank, @muts, $coordinate, $genename, $distance, $gocat, $in_CDS, "-"),"\n"
+	#col 8 in gff. phase 0 means the first base is the first base of a codon, 1 means the 2nd base is the first base of a codon, 2 means the 3rd base is the first base of a codon.
 }
 
 
