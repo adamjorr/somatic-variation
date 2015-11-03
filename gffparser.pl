@@ -86,7 +86,17 @@ my %flanks;
 open (my $ffh, "<", $flanks_file) or die $!;
 while (<$ffh>){
 	chomp;
-	(my $id, my $loc, my $flank) = split("\t");
+	my $id; my $loc; my $flank;
+	my @fields = split("\t");
+	if (scalar(@fields) == 3){
+		($id, $loc, $flank) = @fields;	
+	}
+	elsif (scalar(@fields) == 2){
+		($loc, $flank) = @fields;
+	}
+	else{
+		die "$flanks_file has an invalid number of fields.";
+	}
 	$flanks{$loc} = $flank;
 }
 close $ffh or die $!;
@@ -110,24 +120,59 @@ while (my $x = $vcf->next_data_array()){
 	my $coordinate = $chr . ':' . $location;
 	my $flank = $flanks{$coordinate};
 	next unless $flank;
-	#print join("\t",@{$locs{$chr}}), "\n";
-	my @cds_locs = @{$cds_locs{$chr}};
-	my $closefinder = Number::Closest->new(number => $location, numbers => $locs{$chr});
-	my $closest = $closefinder -> find;
-	my $closestgene = $locations{$chr}->{$closest};
-	my $distance = abs($closest - $location);
-	my $genename = $annot{$closestgene}->{'name'} || $closestgene;
-	my $gocat = $annot{$closestgene}->{'go'};
+	
+	my @cds_locs = ();
+	my $closest = '';
+	my $distance = '';
+	my $genename = '';
+	my $gocat = '';
+	my $firstindex = 0;
 	my $in_CDS;
 	my $phase;
 	my $old_aa;
 	my $new_aa;
+	if (defined($cds_locs{$chr})){
+		@cds_locs =	@{$cds_locs{$chr}};
+		my $closefinder = Number::Closest->new(number => $location, numbers => $locs{$chr});
+		$closest = $closefinder -> find;
+		my $closestgene = $locations{$chr}->{$closest};
+		$distance = abs($closest - $location);
+		$genename = $annot{$closestgene}->{'name'} || $closestgene;
+		$gocat = $annot{$closestgene}->{'go'};
+		$firstindex = List::MoreUtils::firstidx{$_ > $location} @cds_locs;
+	}
+
+	#my @cds_locs = (defined($cds_locs{$chr})) ? @{$cds_locs{$chr}} : ();
+	#my $closefinder = Number::Closest->new(number => $location, numbers => $locs{$chr});
+	#my $closest = $closefinder -> find;
+	#my $closestgene = $locations{$chr}->{$closest};
+	#my $distance = abs($closest - $location);
+	#my $genename = $annot{$closestgene}->{'name'} || $closestgene;
+	#my $gocat = $annot{$closestgene}->{'go'};
+
+	my %gt;
+	my $oldbase;
+	my $newbase;
+	if(length($$x[4]) > 1){ # non-reference site
+		($oldbase, $newbase) = split(',',$$x[4]);
+		%gt = ('1' => $oldbase, '2' => $newbase);
+	}
+	else{
+		$oldbase = $$x[3];
+		$newbase = $$x[4];
+		%gt = ('0' => $$x[3], '1' => $$x[4]);	
+	}
 	my @muts = map{(split(':',$$x[$_]))[0]} @sampleindex;
-	my %gt = ('0' => $$x[3], '1' => $$x[4]);
 	@muts = map{join("/",(map {$gt{$_}} split("/",$_)))} @muts;
 	#@muts = map{join("/",map {$gt{$_}} split("/",$_))} @muts;
 
-	my $firstindex = List::MoreUtils::firstidx { $_ > $location } @cds_locs;
+	# my $firstindex;
+	# if (scalar(@cds_locs) > 0) {
+	# 	$firstindex = List::MoreUtils::firstidx { $_ > $location } @cds_locs;
+	# }
+	#my $firstindex = (scalar(@cds_locs) > 0) ? List::MoreUtils::firstidx{$_ > $location} @cds_locs : 0;
+	
+	#if it's not mapped, pretend it's out of a CDS
 	if ($firstindex % 2 == 0){ #if 1st loc after snp is even
 		#it's the start of a CDS and so is out of a CDS
 		$in_CDS = 0;
@@ -141,8 +186,9 @@ while (my $x = $vcf->next_data_array()){
 		$flank =~ m/[ATCG]/;
 		my $snp_flank_pos = $-[0];
 		my $old_codon = substr($flank, $snp_flank_pos - $snp_codon_pos, 3);
+		substr($old_codon,$snp_codon_pos,1,$oldbase) if (substr($old_codon,$snp_codon_pos,1) ne $oldbase);
 		my $new_codon = $old_codon;
-		substr($new_codon,$snp_codon_pos,1,$$x[4]);
+		substr($new_codon,$snp_codon_pos,1,$newbase);
 		#print $new_codon, "\t", $old_codon, "\n";
 		my $codontable = Bio::Tools::CodonTable->new();
 		$old_aa = $codontable->translate($old_codon);
