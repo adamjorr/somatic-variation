@@ -126,7 +126,7 @@ sub flanking_ref{
 
 	my $seq = $chrseq{$chr};
 	my $startloc;
-	if ($flanksize > $pos - 2){
+	if ($flanksize > $pos - 1){
 		$startloc = 0;
 	}
 	else{
