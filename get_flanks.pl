@@ -126,13 +126,13 @@ sub flanking_ref{
 
 	my $seq = $chrseq{$chr};
 	my $startloc;
-	if ($flanksize > $pos + 1){
+	if ($flanksize > $pos - 2){
 		$startloc = 0;
 	}
 	else{
-		$startloc = $pos + 1 - $flanksize;
+		$startloc = $pos - 1 - $flanksize;
 	}
-	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos + 1,1)) . lc(substr($seq, $pos + 1, $flanksize));
+	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos - 1,1)) . lc(substr($seq, $pos, $flanksize));
 }
 
 #Takes a reference to a hash with keys of discoSNP IDs and values of sequence data,
