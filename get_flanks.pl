@@ -132,7 +132,7 @@ sub flanking_ref{
 	else{
 		$startloc = $pos + 1 - $flanksize;
 	}
-	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos,1)) . lc(substr($seq, $pos + 1, $flanksize));
+	return lc(substr($seq, $startloc, $flanksize)) . uc(substr($seq,$pos + 1,1)) . lc(substr($seq, $pos + 1, $flanksize));
 }
 
 #Takes a reference to a hash with keys of discoSNP IDs and values of sequence data,
