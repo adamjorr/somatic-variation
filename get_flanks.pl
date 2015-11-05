@@ -128,6 +128,7 @@ sub flanking_ref{
 	my $startloc;
 	if ($flanksize > $pos - 1){
 		$startloc = 0;
+		$flanksize = $pos - 1;
 	}
 	else{
 		$startloc = $pos - 1 - $flanksize;
