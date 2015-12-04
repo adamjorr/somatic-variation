@@ -47,12 +47,12 @@ for (i in 1:length(supportsites[,1])){
 }
 
 #These labelling / legend things need adjustment sometimes
-
-samplenumbers <- sort(sapply(tree$tip.label, FUN = function(x) strtoi(regmatches(x,regexpr('[0-9]+',x)))))
+tiplabels()
+#samplenumbers <- sort(sapply(tree$tip.label, FUN = function(x) strtoi(regmatches(x,regexpr('[0-9]+',x)))))
 # samplenumbers <- sapply(samplenumbers, FUN = function(x) sub('M2c','M3a',x))
 #tiplabels(sapply(tree$tip.label, FUN=function(x) substr(x,1,nchar(x)-1)),frame="none",adj=-.25)
 #tiplabels(tree$tip.label,frame="none",adj=-.25)
-tiplabels(sapply(tree$tip.label, FUN=function(x) samplenumbers[x]),frame="none",adj=-.25)
+#tiplabels(sapply(tree$tip.label, FUN=function(x) samplenumbers[x]),frame="none",adj=-.25)
 legend('bottomleft',c('% of supporting sites','% of sites indicating a homozygous -> heterozygous \n mutation occured here','% of sites indicating a heterozygous -> homozygous \n mutation occured here','% of sites with a homozygote \n and a heterozygote on both sides'), fill = mycolors, cex = .9, y.intersp=2, bty='n')
 
 dev.off()
