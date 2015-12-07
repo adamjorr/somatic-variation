@@ -23,8 +23,8 @@ main();
 
 sub main{
 	my $maskr = load_gff($gff_file);
-	my $vcf = print_vcf_header();
-	print_vcf($vcf,$maskr);
+	my $vcfr = print_vcf_header();
+	print_vcf($vcfr,$maskr);
 	exit;
 }
 
@@ -43,17 +43,19 @@ sub print_vcf_header{
 	my $vcf = Vcf->new(fh=>\*STDIN);
 	$vcf->parse_header();
 	print $vcf -> format_header();
-	return $vcf;
+	return \$vcf;
 }
 
 sub print_vcf{
-	my $vcf = shift;
+	my $vcfr = shift;
 	my $maskr = shift;
+	my $vcf = ${$vcfr};
 	my %mask = %{$maskr};
 	while (my $x = $vcf->next_data_array()){
 		my $chr = $$x[0];
 		my $loc = $$x[1];
-		print join("\t",@{$x}) . "\n" unless (any {$_ -> contains($loc)} $mask{$chr});
+		next unless defined($mask{$chr});
+		print join("\t",@{$x}) . "\n" unless (any {$_ -> contains($loc)} @{$mask{$chr}});
 	}
 }
 
@@ -62,6 +64,9 @@ __END__
 Todo: test
 
 add documentation
+
+
+Due to improperly formatted GFF file . . .
 
 ------------- EXCEPTION: Bio::Root::BadParameter -------------
 MSG: ' 3.8' is not a valid score
@@ -72,7 +77,7 @@ STACK: Bio::SeqFeature::Generic::score /usr/share/perl5/Bio/SeqFeature/Generic.p
 STACK: Bio::Tools::GFF::_from_gff3_string /usr/share/perl5/Bio/Tools/GFF.pm:628
 STACK: Bio::Tools::GFF::from_gff_string /usr/share/perl5/Bio/Tools/GFF.pm:434
 STACK: Bio::Tools::GFF::next_feature /usr/share/perl5/Bio/Tools/GFF.pm:395
-STACK: main::load_gff /home/adam/code/python/zypy/vcfmasker.pl:35
-STACK: main::main /home/adam/code/python/zypy/vcfmasker.pl:25
-STACK: /home/adam/code/python/zypy/vcfmasker.pl:22
+...
 --------------------------------------------------------------
+
+To fix, use s/\t /\t/g 
