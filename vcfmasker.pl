@@ -13,7 +13,7 @@ my $pvalue = 95.0;
 my $gff_file;
 my $help;
 GetOptions(	'gff|g=s' => \$gff_file,
-			'probability|p=i' => \$pvalue,
+			'probability|p=f' => \$pvalue,
 			'help|h|?' => \$help);
 
 pod2usage(1) if $help;
