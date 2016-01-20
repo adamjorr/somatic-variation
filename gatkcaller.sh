@@ -33,7 +33,7 @@ for F in $FASTQFILES; do
 		RGLB=$(expr $F : '\(M[0-9]*\)')
 		RGSM=$(expr $F : '\(M[0-9]*[abc]\)')
 		bowtie2 -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam >/dev/null || exit
-		$PICARD AddOrReplaceReadGroups INPUT=${BASEFNAME%R1*}.sam OUTPUT=${BASEFNAME%R1*}.bam RGID=${RGID} RGLB=lib${BASEFNAME%R1*} RGPL=${PLATFORM} RGPU=${RGPU} RGSM=sample${BASEFNAME%R1*} || exit
+		samtools view -bh -o ${BASEFNAME%R1*}.bam ${BASEFNAME%R1*}.sam || exit
 		rm ${BASEFNAME%R1*}.sam || exit
 	fi
 done
