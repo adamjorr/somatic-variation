@@ -12,7 +12,7 @@ if [ $# -ne 1 ]; then			#if we forget arguments
 fi
 
 #Here are some things you might want to change:
-PLATFORM=Illumina #We assume Illumina; if we're wrong, change it here.
+PLATFORM=ILLUMINA #We assume Illumina; if we're wrong, change it here.
 PICARD="picard" #How do I call picard on this system?
 GATK=~/bin/GenomeAnalysisTK.jar #Location of your GATK jar
 
@@ -29,8 +29,11 @@ fi
 for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F)
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
-		bowtie2 -x aligner -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam >/dev/null || exit
-		$PICARD AddOrReplaceReadGroups INPUT=${BASEFNAME%R1*}.sam OUTPUT=${BASEFNAME%R1*}.bam RGID=${BASEFNAME%R1*} RGLB=lib${BASEFNAME%R1*} RGPL=${PLATFORM} RGPU=NA RGSM=sample${BASEFNAME%R1*} || exit
+		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
+		RGLB=$(expr $F : '\(M[0-9]*\)')
+		RGSM=$(expr $F : '\(M[0-9]*[abc]\)')
+		bowtie2 -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam >/dev/null || exit
+		$PICARD AddOrReplaceReadGroups INPUT=${BASEFNAME%R1*}.sam OUTPUT=${BASEFNAME%R1*}.bam RGID=${RGID} RGLB=lib${BASEFNAME%R1*} RGPL=${PLATFORM} RGPU=${RGPU} RGSM=sample${BASEFNAME%R1*} || exit
 		rm ${BASEFNAME%R1*}.sam || exit
 	fi
 done
