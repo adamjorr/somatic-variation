@@ -30,7 +30,7 @@ for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F)
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
-		RGLB=$(expr $F : '\(M[0-9]*\)')
+		RGLB=$(expr $F : '\(M[0-9]*[abc]\)')
 		RGSM=$(expr $F : '\(M[0-9]*[abc]\)')
 		bowtie2 -p 16 -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam >/dev/null || exit
 		samtools view -bh -o ${BASEFNAME%R1*}.bam ${BASEFNAME%R1*}.sam || exit
