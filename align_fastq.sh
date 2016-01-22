@@ -22,9 +22,10 @@ FASTQFILES=$(find ./data/ -name '*R1*.fastq')
 
 #Build fasta index
 if [ ! -e aligner.1.bt2 ] || [ ! -e aligner.rev.2.bt2 ]; then
-	bowtie2-build $REFERENCEFILE aligner >/dev/null || exit
+	bowtie2-build $REFERENCEFILE aligner || exit
 fi
 
+echo Making BAM files . . .
 #Make bamfiles from the FASTQs
 for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F)
@@ -39,6 +40,7 @@ for F in $FASTQFILES; do
 	fi
 done
 
+echo Merging . . .
 #Now we merge the files
 #$PICARD MergeSamFiles $INPUTS OUTPUT=data.bam USE_THREADING=true || exit
 samtools merge -@ $CORES -n data.bam $BAMS || exit
