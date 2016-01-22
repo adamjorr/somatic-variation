@@ -1,5 +1,5 @@
 #!usr/bin/bash
-
+##TODO: REMOVE ALIGNMENT COMPONENTS, UPDATE DOCS + VARIABLES
 #aligntoref.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory and calls SNPs with GATK.
 #requires samtools, picard-tools, the GATK, and bowtie2
@@ -28,6 +28,7 @@ fi
 #Make bamfiles from the FASTQs
 for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F)
+	INPUTS=$(echo $INPUTS INPUT=${BASEFNAME%R1*}.bam)
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
 		RGLB=$(expr $F : '\(M[0-9]*[abc]\)')
@@ -38,12 +39,23 @@ for F in $FASTQFILES; do
 	fi
 done
 
-for F in $(find . -name '*.bam'); do
-	INPUTS=$(echo $INPUTS INPUT=$F)
-done
+# for F in $(find . -name '*.bam'); do
+# 	INPUTS=$(echo $INPUTS INPUT=$F)
+# done
 
 #Now we merge the files, mark duplicates, make a sequence dictionary and a bam index.
 $PICARD MergeSamFiles $INPUTS OUTPUT=data.bam USE_THREADING=true || exit
+
+#Now clean up
+for F in $FASTQFILES; do
+	BASEFNAME=$(basename $F)
+	rm ${BASEFNAME%R1*}.bam
+done
+
+###Below uses GATK to do some analysis.
+
+
+
 $PICARD MarkDuplicates INPUT=data.bam OUTPUT=dedup.bam METRICS_FILE=metrics.txt MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit
 samtools faidx $REFERENCEFILE || exit
 $PICARD CreateSequenceDictionary REFERENCE=${REFERENCEFILE} OUTPUT=${REFERENCEFILE%.*}.dict
@@ -60,4 +72,4 @@ java -jar ${GATK} -T UnifiedGenotyper -I recal.bam -R ${REFERENCEFILE} -ploidy 2
 #Clean up some things
 rm ${REFERENCEFILE}.fai ${REFERENCEFILE%.*}.dict metrics.txt aligner* forIndelAligner.intervals realigned.bam first-calls.vcf recal_data.table
 
-exit
+exit 0
