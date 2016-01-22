@@ -18,7 +18,7 @@ CORES=16
 
 #Some variables
 REFERENCEFILE=$1
-FASTQFILES=$(find ./data/ -name '*R1*.fastq')
+FASTQFILES=$(find ./data/ -name '*R1*.fastq') || exit
 
 #Build fasta index
 if [ ! -e aligner.1.bt2 ] || [ ! -e aligner.rev.2.bt2 ]; then
@@ -28,13 +28,13 @@ fi
 echo Making BAM files . . .
 #Make bamfiles from the FASTQs
 for F in $FASTQFILES; do
-	BASEFNAME=$(basename $F)
-	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam)
+	BASEFNAME=$(basename $F) || exit
+	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam) || exit
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit
 		RGLB=$(expr $F : '\(M[0-9]*[abc]\)') || exit
 		RGSM=$(expr $F : '\(M[0-9]*[abc]\)') || exit
-		bowtie2 -p $CORES -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam >/dev/null || exit
+		bowtie2 -p $CORES -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam || exit
 		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -n -T tmp ${BASEFNAME%R1*}.sam || exit
 		rm ${BASEFNAME%R1*}.sam || exit
 	fi
