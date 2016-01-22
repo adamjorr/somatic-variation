@@ -44,6 +44,6 @@ done
 samtools merge -@ $CORES -n data.bam $BAMS || exit
 
 #Now clean up
-rm $BAMS || exit
+rm $BAMS aligner* || exit
 
 exit 0
