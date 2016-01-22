@@ -32,8 +32,8 @@ for F in $FASTQFILES; do
 	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam) || exit
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit
-		RGLB=$(expr $F : '\(M[0-9]*[abc]\)') || exit
-		RGSM=$(expr $F : '\(M[0-9]*[abc]\)') || exit
+		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
+		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		bowtie2 -p $CORES -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam || exit
 		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -n -T tmp ${BASEFNAME%R1*}.sam || exit
 		rm ${BASEFNAME%R1*}.sam || exit
