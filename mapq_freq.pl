@@ -12,7 +12,7 @@ while(<>){
 	$freqs{$_} += 1;
 }
 
-for my $k (sort keys %freqs){
+for my $k (sort {$a <=> $b} keys %freqs){
 	print $k . "\t" . $freqs{$k} . "\n";
 }
 
