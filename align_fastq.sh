@@ -1,13 +1,13 @@
 #!usr/bin/bash
 
-#aligntoref.sh reference.fasta
-#Takes reference and aligns all .fastq files in any subdirectory.
+#aligntoref.sh reference.fasta data/ out.bam
+#Takes reference and aligns all .fastq files in the data subdirectory that contain R1 in their name.
 #requires samtools, picard-tools, and bowtie2
 
 #http://tldp.org/LDP/abs/html/string-manipulation.html is a great guide for manipulating strings in bash
 
-if [ $# -ne 1 ]; then			#if we forget arguments
-	echo "Usage: $0 reference.fasta"	#remind us
+if [ $# -ne 3 ]; then			#if we forget arguments
+	echo "Usage: $0 reference.fasta data/ out.bam"	#remind us
 	exit 1				#and exit with error
 fi
 
@@ -18,7 +18,9 @@ CORES=16
 
 #Some variables
 REFERENCEFILE=$1
-FASTQFILES=$(find ./data/ -name '*R1*.fastq') || exit
+DATADIR=$2
+OUTNAME=$3
+FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
 
 #Build fasta index
 if [ ! -e aligner.1.bt2 ] || [ ! -e aligner.rev.2.bt2 ]; then
@@ -43,7 +45,7 @@ done
 echo Merging . . .
 #Now we merge the files
 #$PICARD MergeSamFiles $INPUTS OUTPUT=data.bam USE_THREADING=true || exit
-samtools merge -@ $CORES -n data.bam $BAMS || exit
+samtools merge -@ $CORES -n $OUTNAME $BAMS || exit
 
 #Now clean up
 rm $BAMS aligner* || exit
