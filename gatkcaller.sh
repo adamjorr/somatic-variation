@@ -6,7 +6,7 @@
 
 #http://tldp.org/LDP/abs/html/string-manipulation.html is a great guide for manipulating strings in bash
 
-if [ $# -ne 1 ]; then			#if we forget arguments
+if [ $# -ne 2 ]; then			#if we forget arguments
 	echo "Usage: $0 reference.fasta data.bam"	#remind us
 	exit 1				#and exit with error
 fi
