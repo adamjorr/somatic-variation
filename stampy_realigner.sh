@@ -13,6 +13,14 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
+if ! [ -e ${REFERENCEFILE%%.*}.stidx ]
+	stampy -G ${REFERENCEFILE%%.*} ${REFERENCEFILE} || exit 1
+fi
+
+if ! [ -e ${REFERENCEFILE%%.*}.sthash ]
+	stampy -g ${REFERENCEFILE%%.*} -H ${REFERENCEFILE%%.*}
+fi
+
 for GROUP in $(samtools view -H fixmate_lowerthan13_unmapped.bam | grep ^@RG | cut -f2); do
 		SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
         stampy -t 16 -g ../../grandis_reference/Egrandis_201 -h ../../grandis_reference/Egrandis_201 -M fixmate_lowerthan13_unmapped.bam --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
