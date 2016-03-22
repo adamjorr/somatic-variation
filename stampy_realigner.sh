@@ -1,8 +1,7 @@
 #!usr/bin/bash
 
-#bwa_aligner.sh reference.fasta
-#Takes reference and aligns all .fastq files in any subdirectory.
-#This is a modified version of align_fastq which uses bwa instead of bowtie.
+#stampy_realigner.sh reference.fasta data.bam out.bam
+#Takes reference and realigns all reads in the data.bam file.
 
 if [ $# -ne 3 ]; then			#if we forget arguments
 	echo "Usage: $0 reference.fasta data.bam out.bam"	#remind us
