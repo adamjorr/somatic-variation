@@ -4,8 +4,8 @@
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
 
-if [ $# -ne 1 ]; then			#if we forget arguments
-	echo "Usage: $0 reference.fasta"	#remind us
+if [ $# -ne 3 ]; then			#if we forget arguments
+	echo "Usage: $0 reference.fasta data/ out.bam"	#remind us
 	exit 1				#and exit with error
 fi
 
@@ -15,7 +15,9 @@ CORES=16
 
 #Some variables
 REFERENCEFILE=$1
-FASTQFILES=$(find ../data/ -name '*R1*.fastq') || exit
+DATADIR=$2
+OUTNAME=$3
+FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
 
 echo Making BAM files . . .
 #Make bamfiles from the FASTQs
