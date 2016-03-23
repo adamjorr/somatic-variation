@@ -26,5 +26,5 @@ for GROUP in $(samtools view -H fixmate_lowerthan13_unmapped.bam | grep ^@RG | c
         stampy -t 16 -g ${REFERENCEFILE%%.*} -h ${REFERENCEFILE%%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
 done
 
-samtools merge -n -c -p $OUTFILE $SAMS
+samtools merge -@ 16 -n -c -p --O BAM ${OUTFILE} $SAMS
 rm $SAMS
