@@ -21,7 +21,7 @@ if ! [ -e ${REFERENCEFILE%%.*}.sthash ]
 	stampy -g ${REFERENCEFILE%%.*} -H ${REFERENCEFILE%%.*}
 fi
 
-for GROUP in $(samtools view -H fixmate_lowerthan13_unmapped.bam | grep ^@RG | cut -f2); do
+for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
 		SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
         stampy -t 16 -g ${REFERENCEFILE%%.*} -h ${REFERENCEFILE%%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
 done
