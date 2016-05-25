@@ -1,6 +1,6 @@
 #!usr/bin/bash
 
-#aligntoref.sh reference.fasta
+#bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
 
