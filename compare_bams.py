@@ -24,6 +24,7 @@ def parse_my_args():
 	return (binsize,maxcontigs,out,otherbam,basebam)
 
 def read_bam(file):
+	'''read a file and return a pysam bam object'''
 	bamob = pysam.AlignmentFile(file,rb)
 	bamob.check_index()
 	return bamob
