@@ -13,17 +13,17 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-if [ ! -e ${REFERENCEFILE%%.*}.stidx ]; then
-	stampy -G ${REFERENCEFILE%%.*} ${REFERENCEFILE} || exit 1
+if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
+	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
 fi
 
-if [ ! -e ${REFERENCEFILE%%.*}.sthash ]; then
-	stampy -g ${REFERENCEFILE%%.*} -H ${REFERENCEFILE%%.*}
+if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
+	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*}
 fi
 
 for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
 		SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
-        stampy -t 16 -g ${REFERENCEFILE%%.*} -h ${REFERENCEFILE%%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
+        stampy -t 16 -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
 done
 
 samtools merge -@ 16 -n -c -p --O BAM ${OUTFILE} $SAMS
