@@ -13,11 +13,11 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-if [ ! -e ${REFERENCEFILE%%.*}.stidx ]
+if [ ! -e ${REFERENCEFILE%%.*}.stidx ]; then
 	stampy -G ${REFERENCEFILE%%.*} ${REFERENCEFILE} || exit 1
 fi
 
-if [ ! -e ${REFERENCEFILE%%.*}.sthash ]
+if [ ! -e ${REFERENCEFILE%%.*}.sthash ]; then
 	stampy -g ${REFERENCEFILE%%.*} -H ${REFERENCEFILE%%.*}
 fi
 
