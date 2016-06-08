@@ -18,7 +18,7 @@ GATK=~/bin/GenomeAnalysisTK.jar #Location of your GATK jar
 #Some variables
 REFERENCEFILE=$1
 FILEIN=$2
-CORES=16
+CORES=48
 HALFCORES=$((CORES / 2))
 
 ###Below uses GATK to do some analysis.
