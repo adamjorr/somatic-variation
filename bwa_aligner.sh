@@ -10,7 +10,7 @@ if [ $# -ne 3 ]; then			#if we forget arguments
 fi
 
 #Here are some things you might want to change:
-PLATFORM=ILLUMINA #We assume Illumina; if we're wrong, change it here.
+RGPL=ILLUMINA #We assume Illumina; if we're wrong, change it here.
 CORES=48
 
 #Some variables
