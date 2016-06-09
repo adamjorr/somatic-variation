@@ -27,7 +27,7 @@ HALFCORES=$((CORES / 2))
 
 $PICARD MarkDuplicates INPUT=$FILEIN OUTPUT=dedup.bam METRICS_FILE=metrics.txt MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit 1
 
-if [ ! -e ${REFERENCEFILE}.fai ]
+if [ ! -e ${REFERENCEFILE}.fai ]; then
 	samtools faidx $REFERENCEFILE || exit 1
 fi
 
