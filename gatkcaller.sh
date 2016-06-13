@@ -37,7 +37,7 @@ $PICARD BuildBamIndex INPUT=dedup.bam
 #Now we use GATK to recalibrate our quality scores and give us a VCF.
 java -jar ${GATK} -T RealignerTargetCreator -nt $CORES -R ${REFERENCEFILE} -I dedup.bam -o forIndelAligner.intervals || exit 1
 java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I dedup.bam -targetIntervals forIndelAligner.intervals -o realigned.bam || exit 1
-java -jar ${GATK} -T UnifiedGenotyper -I realigned.bam -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o first-calls.vcf || exit
+java -jar ${GATK} -T UnifiedGenotyper -nt $HALFCORES -nct $HALFCORES -I realigned.bam -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o first-calls.vcf || exit
 java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I realigned.bam -R ${REFERENCEFILE} --knownSites first-calls.vcf -o recal_data.table || exit 1
 java -jar ${GATK} -T PrintReads -nct $CORES -I realigned.bam -R ${REFERENCEFILE} -BQSR recal_data.table -EOQ -o recal.bam || exit 1
 java -jar ${GATK} -T UnifiedGenotyper -nt $HALFCORES -nct $HALFCORES -I recal.bam -R ${REFERENCEFILE} -ploidy 2 -glm BOTH -o var-calls.vcf || exit 1
