@@ -43,6 +43,6 @@ java -jar ${GATK} -T PrintReads -nct $CORES -I realigned.bam -R ${REFERENCEFILE}
 java -jar ${GATK} -T UnifiedGenotyper -nt $HALFCORES -nct $HALFCORES -I recal.bam -R ${REFERENCEFILE} -ploidy 2 -glm BOTH -o var-calls.vcf || exit 1
 
 #Clean up some things
-rm ${REFERENCEFILE}.fai ${REFERENCEFILE%.*}.dict metrics.txt aligner* forIndelAligner.intervals realigned.bam first-calls.vcf recal_data.table dedup.bam
+rm aligner* forIndelAligner.intervals realigned.bam first-calls.vcf recal_data.table dedup.bam
 
 exit 0
