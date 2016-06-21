@@ -27,7 +27,7 @@ HALFCORES=$((CORES / 2))
 
 $PICARD MarkDuplicates INPUT=$FILEIN OUTPUT=dedup.bam METRICS_FILE=metrics.txt MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit 1
 
-if [ ! -e ${REFERENCEFILE}.fai ]
+if [ ! -e ${REFERENCEFILE}.fai ]; then
 	samtools faidx $REFERENCEFILE || exit 1
 fi
 
@@ -43,6 +43,6 @@ java -jar ${GATK} -T PrintReads -nct $CORES -I realigned.bam -R ${REFERENCEFILE}
 java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I recal.bam -R ${REFERENCEFILE} -ploidy 2 -glm BOTH -o var-calls.vcf || exit 1
 
 #Clean up some things
-rm metrics.txt aligner* forIndelAligner.intervals realigned.bam first-calls.vcf recal_data.table dedup.bam
+rm aligner* forIndelAligner.intervals realigned.bam first-calls.vcf recal_data.table dedup.bam
 
 exit 0

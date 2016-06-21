@@ -8,23 +8,24 @@ if [ $# -ne 3 ]; then			#if we forget arguments
 	exit 1				#and exit with error
 fi
 
-CORES=16
+CORES=48
 REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-if [ ! -e ${REFERENCEFILE%%.*}.stidx ]
-	stampy -G ${REFERENCEFILE%%.*} ${REFERENCEFILE} || exit 1
+if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
+	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
 fi
 
-if [ ! -e ${REFERENCEFILE%%.*}.sthash ]
-	stampy -g ${REFERENCEFILE%%.*} -H ${REFERENCEFILE%%.*}
+if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
+	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*}
 fi
 
 for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
-		SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
-        stampy -t 16 -g ${REFERENCEFILE%%.*} -h ${REFERENCEFILE%%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
+	echo $GROUP
+	SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
+        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
 done
 
-samtools merge -@ 16 -n -c -p --O BAM ${OUTFILE} $SAMS
+samtools merge -@ ${CORES} -n -c -p ${OUTFILE} $SAMS || exit 1
 rm $SAMS
