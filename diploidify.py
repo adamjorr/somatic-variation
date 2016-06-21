@@ -113,10 +113,11 @@ def main():
 	skip = args.skip
 
 	seqs = AlignIO.read(filein,filetype)
-	newalignment= [''] * seqs.get_alignment_length()
-	for i in range(0,seqs.get_alignment_length()-1):
+	newalignment= [''] * len(seqs)
+	for i in range(0,seqs.get_alignment_length()):# - 1??
 		baselist = list(seqs[:,i])
-		if not (is_valid_site(baselist) and is_biallelic(baselist)): continue
+		if not is_biallelic(baselist): continue
+		if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist)
 		if not is_single_mutation(c,v): continue
@@ -128,11 +129,13 @@ def main():
 				
 		combined = list()
 		if skip: combined = baselist
-		else: combined = [c[i] + v[i] for i in range(0,len(c))]
+		else: combined = [c[k] + v[k] for k in range(0,len(c))]
+		#FIXME
+		print "newalignment: ",newalignment, "\n"
+		print "combined: ",combined,"\n"
+		newalignment = [newalignment[j] + combined[j] for j in range(0,len(combined))]
 
-		newalignment = [newalignment[i] + combined[i] for i in range(0,len(combined))]
-
-	newseqobjs = [SeqRecord(Seq(newalignment[i], IUPAC.unambiguous_dna), id=seqs[i].id, description='') for i in range(0,len(seqs))]
+	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]
 	newalnobj = MultipleSeqAlignment(newseqobjs)
 	newalnobj = remove_duplicate_seqs(newalnobj)
 	AlignIO.write(newalnobj,fileout,outtype)
