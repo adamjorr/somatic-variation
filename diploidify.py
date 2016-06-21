@@ -130,9 +130,6 @@ def main():
 		combined = list()
 		if skip: combined = baselist
 		else: combined = [c[k] + v[k] for k in range(0,len(c))]
-		#FIXME
-		print "newalignment: ",newalignment, "\n"
-		print "combined: ",combined,"\n"
 		newalignment = [newalignment[j] + combined[j] for j in range(0,len(combined))]
 
 	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]
