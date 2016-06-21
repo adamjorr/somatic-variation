@@ -71,13 +71,31 @@ GetOptions(	'discosnp|d=s' => \$discofile,
 			'ref|r=s' => \$reffile,
 			'help|h|?' => \$help);
 pod2usage(1) if $help;
-die "Cannot read $discofile" unless -r $discofile;
-
-print_output();
-exit;
-
+die "Nonexistant or unreadable reference $reffile" unless defined_readable($reffile);
+die "Nonexistant or unreadable vcf file $vcffile" unless defined_readable($vcffile);
+if (! defined $discofile){
+	warn("No discoSNP file detected, starting in simple mode\n");
+	simple_mode();
+	exit;
+}
+else{
+	die "Cannot read $discofile" unless -r $discofile;
+	print_output();
+	exit;
+}
 
 # -----------------------
+
+#Takes the name of a file and checks if it has been defined and
+#if the file is readable
+sub defined_readable{
+	my $file = shift;
+	if (defined $file){
+		return -r $file;
+	}
+	return 0;
+}
+
 
 #Takes a fasta file and returns a hash with the IDs as keys
 #and the sequences as values.
@@ -271,6 +289,19 @@ sub print_output{
 	}
 	close $otherfh;
 	exit;
+}
+
+sub simple_mode{
+	my $chr_seq_ref = chr_seq($reffile);
+	my $otherids = othervcflocs($vcffile, $chr_seq_ref);
+	my %vcfids = %$otherids;
+	for my $key (sort keys %vcfids){
+		my $pos = $vcfids{$key}->{'pos'};
+		my $chr = $vcfids{$key}->{'chr'};
+		my $flanks = flanking_ref($chr, $pos, $flanksize, $chr_seq_ref );
+		print(join("\t",$chr . ':' . $pos, $flanks),"\n");
+	}
+
 }
 
 # ------------------
