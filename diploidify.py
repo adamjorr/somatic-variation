@@ -63,7 +63,7 @@ def is_single_mutation(constantlist, variedlist):
 	return False
 
 def diploidify(baselist):
-	"""Makes every site 2 sites based on IUPAC codes"""
+	"""Makes every site 2 sites based on IUPAC codes."""
 	constant = [iupac[baselist[0]][0]]
 	varied = [iupac[baselist[0]][1]]
 	for b in range(1,len(baselist)):
@@ -72,6 +72,8 @@ def diploidify(baselist):
 			constant.extend('-')
 			varied.extend('-')
 		else:
+			#We need to be careful about this to account for something like R -> W mutant (A/G -> A/T)
+			#So we make a nonvariable haplotype + a variable haplotype
 			if constant[0] == iupac[base][0]:
 				constant.extend(iupac[base][0])
 				varied.extend(iupac[base][1])
@@ -96,6 +98,10 @@ def remove_duplicate_seqs(alignment):
 			returnseqs.append(record)
 	return MultipleSeqAlignment(returnseqs)
 
+def remove_nonvariable_sites(baselist):
+	"""Takes a baselist and empties it if it is nonvariable"""
+	if unique_list_size(baselist) == 1: baselist = [''] * len(baselist)
+
 def main():
 	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
 	parser.add_argument("-i","--input", help="input file (default: stdin)")
@@ -114,17 +120,17 @@ def main():
 
 	seqs = AlignIO.read(filein,filetype)
 	newalignment= [''] * len(seqs)
-	for i in range(0,seqs.get_alignment_length()):# - 1??
+	for i in range(0,seqs.get_alignment_length()):
 		baselist = list(seqs[:,i])
 		if not is_biallelic(baselist): continue
 		if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
-		c, v = diploidify(baselist)
+		c, v = diploidify(baselist) #turn baselist into 2 baselists, expanding using IUPAC notation
 		if not is_single_mutation(c,v): continue
 		
 		if variablesites:
-			if unique_list_size(c) == 1: c = [''] * len(c)
-			if unique_list_size(v) == 1: v = [''] * len(c)
+			remove_nonvariable_sites(c)
+			remove_nonvariable_sites(v)
 			if c == v == [''] * len(c): continue
 				
 		combined = list()
