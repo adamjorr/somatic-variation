@@ -1,3 +1,6 @@
+#Nothing needs to be compiled for this project.
+#This make file will run a pipeline to recursively realign reads.
+#Usage: make 3 REFFASTA=ref.fa DATADIR=../data/
 NUMBERS := $(shell seq 2 $(MAKECMDGOALS))
 NUMFILES := $(addsuffix .bam,$(NUMBERS))
 NUMREFS := $(addsuffix .fa,$(NUMBERS))
