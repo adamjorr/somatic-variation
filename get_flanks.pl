@@ -1,5 +1,5 @@
 #!usr/bin/env perl
-#perl get_flanks.pl -v in.vcf <in.fasta >out.fasta
+#get_flanks.pl
 
 =head1 NAME
 
@@ -10,6 +10,10 @@ get_flanks - Get flanking sequences for a SNP from DiscoSNP++ and another set of
 perl get_flanks.pl -d snps.vcf -v more_snps.vcf -r reference.fasta <discosnp.fasta
 
 This will produce 3 files; one with only DiscoSNP++ SNPs, one with SNPs that overlapped, and one with only other SNPs.
+
+perl get_flanks.pl -v snps.vcf -r reference.fasta > flanks.txt
+
+Without -d, allows any vcf to be given with v and prints flanking sequence of all variants to stdout.
 
 Use perldoc get_flanks.pl for even more help.
 
@@ -291,6 +295,8 @@ sub print_output{
 	exit;
 }
 
+#Prints flanks for any arbitrary VCF/FASTA combo without doing
+#other comparisons.
 sub simple_mode{
 	my $chr_seq_ref = chr_seq($reffile);
 	my $otherids = othervcflocs($vcffile, $chr_seq_ref);
