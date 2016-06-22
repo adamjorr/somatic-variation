@@ -1,4 +1,5 @@
 #!usr/bin/env python2
+#WIP to visualize movement of reads between two BAM files created with the same set of reads.
 
 import sys
 import argparse
