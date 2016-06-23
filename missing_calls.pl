@@ -1,4 +1,4 @@
-#!usr/bin/env perl
+#!/usr/bin/env perl
 #reads a VCF file from STDIN and prints the fraction of GTs containing a missing call.
 
 use Vcf;
