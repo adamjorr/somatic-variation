@@ -29,13 +29,13 @@ for F in $FASTQFILES; do
 		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F ${F/R1/R2} > ${BASEFNAME%R1*}.sam
-		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -n -T tmp ${BASEFNAME%R1*}.sam || exit
+		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -m 2G -T tmp ${BASEFNAME%R1*}.sam || exit
 		rm ${BASEFNAME%R1*}.sam || exit
 	fi
 done
 
 echo Merging . . .
-samtools merge -@ $CORES -n $OUTNAME $BAMS || exit
+samtools merge -@ $CORES $OUTNAME $BAMS || exit
 
 #Now clean up
 rm $BAMS || exit
