@@ -15,20 +15,19 @@ my @samples = $vcf->get_samples();
 
 
 while(my $record = $vcf -> next_data_array()){
-	my $fmt = $vcf->get_column($record,'FORMAT');
-	my $gt_idx = $vcf->get_tag_index($fmt,'GT',':');
+	# my $fmt = $vcf->get_column($record,'FORMAT');
+	# my $gt_idx = $vcf->get_tag_index($fmt,'GT',':');
 
-	if ($gt_idx == -1){
-		warn "GT field not found for $record\nSkipping.";
-		continue;
-	}
+	# if ($gt_idx == -1){
+	# 	warn "GT field not found for $record\nSkipping.";
+	# 	continue;
+	# }
 
 	for my $sample (@samples){
 		$total++;
 		my $sam_column = $vcf->get_column($record,$sample);
-		my $gt = $vcf->get_field($sam_column,$gt_idx);
-		my @gts = $vcf->split_gt($gt);
-		if (any {$_ eq '.'} @gts){
+		my $gt = (split(':',$sam_column))[0];
+		if ($gt =~ m/\./){
 			$missing++;
 		}
 	}
