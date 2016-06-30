@@ -19,9 +19,6 @@ DATADIR=$2
 OUTNAME=$3
 FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
 
-${REFERENCEFILE}.amb .ann .bwt .pac .sa
-
-
 if [[ ! -e ${REFERENCEFILE}.amb || ! -e ${REFERENCEFILE}.ann || ! -e ${REFERENCEFILE}.bwt || ! -e ${REFERENCEFILE}.pac || ! -e ${REFERENCEFILE}.sa ]]; then
 	bwa index ${REFERENCEFILE}
 fi
