@@ -37,7 +37,7 @@ for F in $FASTQFILES; do
 		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		bowtie2 -p $CORES -x aligner --phred33 --rg-id ${RGSM} --rg PL:${PLATFORM} --rg PU:${RGPU} --rg LB:${RGLB} --rg SM:${RGSM} -1 $F -2 ${F/R1/R2} -S ${BASEFNAME%R1*}.sam || exit
-		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -n -T tmp ${BASEFNAME%R1*}.sam || exit
+		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -n -m 2G -T tmp ${BASEFNAME%R1*}.sam || exit
 		rm ${BASEFNAME%R1*}.sam || exit
 	fi
 done
