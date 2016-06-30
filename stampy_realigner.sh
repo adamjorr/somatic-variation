@@ -24,7 +24,7 @@ fi
 for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
 	echo $GROUP
 	SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
-        stampy -t ${CORES} --bamkeepgoodreads -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
+        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
 done
 
 samtools merge -@ ${CORES} -n -c -p ${OUTFILE} $SAMS || exit 1
