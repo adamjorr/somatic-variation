@@ -36,7 +36,10 @@ $PICARD BuildBamIndex INPUT=dedup.bam
 
 #Now we use GATK to recalibrate our quality scores and give us a VCF.
 java -jar ${GATK} -T RealignerTargetCreator -nt $CORES -R ${REFERENCEFILE} -I dedup.bam -o forIndelAligner.intervals || exit 1
-java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I dedup.bam -targetIntervals forIndelAligner.intervals -o realigned.bam || exit 1
+split -d -n l/${CORES} forIndelAligner.intervals tmp_intervals_
+parallel java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I dedup.bam -targetIntervals tmp_intervals_{} -o tmp_realigned_{}.bam ::: $(seq -f %02.0f 0 $((CORES-1)))
+echo tmp_realigned_*.bam  | xargs -d' ' -n 1 -i samtools sort -@ ${CORES} -m 2G -o srt_{} {}
+samtools merge -@ ${CORES} -c -p realigned.bam srt_tmp_realigned_*.bam
 java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I realigned.bam -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o first-calls.vcf || exit
 java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I realigned.bam -R ${REFERENCEFILE} --knownSites first-calls.vcf -o recal_data.table || exit 1
 java -jar ${GATK} -T PrintReads -nct $CORES -I realigned.bam -R ${REFERENCEFILE} -BQSR recal_data.table -EOQ -o recal.bam || exit 1
