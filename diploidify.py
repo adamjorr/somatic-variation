@@ -99,8 +99,11 @@ def remove_duplicate_seqs(alignment):
 	return MultipleSeqAlignment(returnseqs)
 
 def remove_nonvariable_sites(baselist):
-	"""Takes a baselist and empties it if it is nonvariable"""
-	if unique_list_size(baselist) == 1: baselist = [''] * len(baselist)
+	"""Takes a baselist and returns an empty list if it is nonvariable, otherwise returns it"""
+	if unique_list_size(baselist) == 1:
+		return [''] * len(baselist)
+	else:
+		return baselist
 
 def main():
 	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
@@ -129,8 +132,8 @@ def main():
 		if not is_single_mutation(c,v): continue
 		
 		if variablesites:
-			remove_nonvariable_sites(c)
-			remove_nonvariable_sites(v)
+			c = remove_nonvariable_sites(c)
+			v = remove_nonvariable_sites(v)
 			if c == v == [''] * len(c): continue
 				
 		combined = list()
