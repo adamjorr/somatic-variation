@@ -34,7 +34,7 @@ for F in $(find ../data/ -name '*R1*.fastq'); do perl run_rcorrector.pl -1 $F -2
 Build a graph and filter on estimated coverage using Khmer. Check [this fork](https://github.com/adamjorr/khmer):
 ```bash
 scripts/load-into-counting.py -ksize 32 -T 48 -M 64e9 khmer_count.graph ../corrected_data/*.fq
-for F in $(find ../corrected_data/ -name '*R1*.fq'); do sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} $(basename $F)_sliced.fq $(basename ${F/R1/R2})_sliced.fq $(basename ${F/R1/})_singletons.fq; done
+for F in $(find ../corrected_data/ -name '*R1*.fq'); do sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} $(basename $F fq)_sliced.fq $(basename ${F/R1/R2} fq)_sliced.fq $(basename ${F/R1/} fq)_singletons.fq; done
 ```
 
 Align with BWA, extract the unmapped and poorly mapped (-q argument) reads, then realign them with stampy. **WARNING:** stampy seems to crash with samtools 1.3, but 1.2 seems to work fine.
