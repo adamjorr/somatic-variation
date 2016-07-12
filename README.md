@@ -39,7 +39,7 @@ for F in $(find ../corrected_data/ -name '*R1*.fq'); do sandbox/slice-paired-rea
 
 For a parallelized version, use:
 ```bash
-parallel 'F={}; G={/.}; sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} ${G}_sliced.fq ${G/R1/R2}_sliced.fq ${G/R1/}_singletons.fq ::: $(find ../corrected_data/ -name '*R1*.fq')'
+parallel -j ${CORES} 'F={}; G={/.}; sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} ${G}_sliced.fq ${G/R1/R2}_sliced.fq ${G/R1/}_singletons.fq ::: $(find ../corrected_data/ -name '*R1*.fq')'
 ```
 
 
