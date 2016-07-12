@@ -37,6 +37,12 @@ scripts/load-into-counting.py -ksize 32 -T 48 -M 64e9 khmer_count.graph ../corre
 for F in $(find ../corrected_data/ -name '*R1*.fq'); do sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} $(basename $F fq)_sliced.fq $(basename ${F/R1/R2} fq)_sliced.fq $(basename ${F/R1/} fq)_singletons.fq; done
 ```
 
+For a parallelized version, use:
+```bash
+parallel 'F={}; G={/.}; sandbox/slice-paired-reads-by-coverage.py -M 40000 khmer_count.graph $F ${F/R1/R2} ${G}_sliced.fq ${G/R1/R2}_sliced.fq ${G/R1/}_singletons.fq ::: $(find ../corrected_data/ -name '*R1*.fq')'
+```
+
+
 Align with BWA, extract the unmapped and poorly mapped (-q argument) reads, then realign them with stampy. **WARNING:** stampy seems to crash with samtools 1.3, but 1.2 seems to work fine.
 ```bash
 bash bwa_aligner.sh ref.fa ../corrected_data/ out1.bam
