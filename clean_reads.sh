@@ -10,9 +10,9 @@ DEST_DIRECTORY=./cleaned_reads
 KMER_SIZE=32
 FILE_PATTERN='*R1*.fastq' #pattern to find first set of reads
 SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
-REPLACE_STRING='R2'
-MAX_MEMORY=64e9
-COVERAGE=40000
+REPLACE_STRING='R2' #pattern for search/replace to find second set of reads
+MAX_MEMORY=64e9 #max memory to be given to khmer
+COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
 
 while getopts :t:d:k:f:s:r:m:c:h opt; do
 	shift $((OPTIND-1))
