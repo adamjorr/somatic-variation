@@ -56,7 +56,7 @@ samtools sort -@ 48 -m 2G -o out1_sorted.bam -O bam -T tmp out1_merged.bam
 Create a new reference. See the instructions [here](https://github.com/samtools/bcftools/wiki/HOWTOs#consensus-calling).
 We don't use the vcfutils.pl method because it uses iupac ambiguity codes.
 ```bash
-samtools mpileup -uf ref.fa out1_sorted.bam | bcftools call --threads 48 -mv -Oz -o bcftools_calls.vcf.gz
+samtools mpileup -uf ref.fa out1_sorted.bam | bcftools call --threads 48 -mv -Ou | bcftools filter -Oz -o bcftools_calls.vcf.gz -e AF<=.5
 tabix bcftools_calls.vcf.gz
 cat ref.fa | bcftools consensus bcftools_calls.vcf.gz > consensus.fa
 ```
