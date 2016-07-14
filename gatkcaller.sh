@@ -5,21 +5,48 @@
 #requires samtools, picard-tools, the GATK, and bowtie2
 
 #http://tldp.org/LDP/abs/html/string-manipulation.html is a great guide for manipulating strings in bash
+USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-g  GATK_PATH] reference.fasta data.bam"
 
 if [ $# -ne 2 ]; then			#if we forget arguments
-	echo "Usage: $0 reference.fasta data.bam"	#remind us
+	echo $USAGE	#remind us
 	exit 1				#and exit with error
 fi
 
 #Here are some things you might want to change:
 PICARD="picard" #How do I call picard on this system?
 GATK=~/bin/GenomeAnalysisTK.jar #Location of your GATK jar
+CORES=48
+
+while getopts :t:p:g:h opt; do
+	shift $((OPTIND-1))
+	case $opt in
+		t)
+			CORES=$OPTARG
+			;;
+		p)
+			PICARD=$OPTARG
+			;;
+		g)
+			GATK=$OPTARG
+			;;
+		h)
+			echo $USAGE >&2
+			exit 1
+			;;
+	    \?)
+			echo "Invalid option: -$OPTARG" >&2
+			exit 1
+			;;
+		:)
+			echo "Option -$OPTARG requires an argument." >&2
+			exit 1
+			;;
+	esac
+done
 
 #Some variables
 REFERENCEFILE=$1
 FILEIN=$2
-CORES=48
-HALFCORES=$((CORES / 2))
 
 ###Below uses GATK to do some analysis.
 
