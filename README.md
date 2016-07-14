@@ -58,7 +58,7 @@ We don't use the vcfutils.pl method because it uses iupac ambiguity codes.
 ```bash
 samtools mpileup -uf ref.fa out1_sorted.bam | bcftools call --threads 48 -mv -Ou | bcftools filter --threads 48 -Oz -o bcftools_calls.vcf.gz -e 'AC==1'
 tabix bcftools_calls.vcf.gz
-cat ref.fa | bcftools consensus bcftools_calls.vcf.gz > consensus.fa
+cat ref.fa | bcftools consensus bcftools_calls.vcf.gz -c consensus.chain > consensus.fa
 ```
 
 Align to the new reference and call variants with GATK.
