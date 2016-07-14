@@ -1,5 +1,5 @@
 #!usr/bin/bash
-#bash vcf2tree.sh file.vcf
+#bash vcf2tree.sh file.vcf out.pdf
 #Takes file.vcf, filters it using replicate info at various stringencies, and plots the trees.
 
 WHEREAMI=`dirname $0`
@@ -23,7 +23,7 @@ raxmlHPC -T 4 -f a -s ../cleaned.dip.phylip-relaxed -n nwk -m ASC_GTRGAMMA --asc
 
 cd ..
 
-Rscript ${PATHTOZYPY}/plot_tree.R tree/RAxML_bestTree.nwk tree.pdf || exit 1
+Rscript ${PATHTOZYPY}/plot_tree.R tree/RAxML_bestTree.nwk $2 || exit 1
 
 cd ..
 
