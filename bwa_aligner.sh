@@ -28,6 +28,7 @@ echo Making BAM files . . .
 for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F) || exit
 	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam) || exit
+	if [ -e ${BASEFNAME%R1*}.bam ]; then samtools quickcheck ${BASEFNAME%R1*}.bam || rm ${BASEFNAME%R1*}.bam; fi
 	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit
 		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
