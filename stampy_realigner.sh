@@ -1,19 +1,28 @@
 #!usr/bin/bash
 
 #stampy_realigner.sh reference.fasta data.bam out.bam
-#Takes reference and realigns all reads in the data.bam file.
+#Takes reference and realigns reads that are not in a proper pair
+#or have quality lower than -q (default: 13) in the data.bam file.
 
-USAGE="Usage: $0 [-t THREADS] reference.fasta data.bam out.bam"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam"
 
 CORES=48
 REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
+TMPDIR=/tmp/
+QUAL=13
 
-while getopts :t:h opt; do
+while getopts :t:d:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
+			;;
+		d)
+			TMPDIR=$OPTARG
+			;;
+		q)
+			QUAL=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -43,14 +52,29 @@ if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
 fi
 
 if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
-	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*}
+	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*} || exit 1
 fi
 
-for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
-	echo $GROUP
-	SAMS=$(echo $SAMS ${GROUP#ID:}.sam) || exit
-        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $DATAFILE --readgroup=${GROUP} > ${GROUP#ID:}.sam || exit 1
+echo SAMTOOLS PREPROCESSING >&2
+samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/tmp.sorted.${DATAFILE} $DATAFILE || exit 1
+samtools fixmate ${TMPDIR}/tmp.sorted.${DATAFILE} ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
+rm ${TMPDIR}/tmp.sorted.${DATAFILE} || exit 1
+samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -o ${TMPDIR}/tmp.mapped.bam -U ${TMPDIR}/tmp.unmapped.bam ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
+rm ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
+
+for GROUP in $(samtools view -H ${TMPDIR}/tmp.unmapped.${DATAFILE} | grep ^@RG | cut -f2); do
+	echo $GROUP >&2
+	BAMS=$(echo $BAMS ${TMPDIR}/${GROUP#ID:}.bam) || exit 1
+        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.${DATAFILE} --readgroup=${GROUP} |
+        samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/${GROUP#ID:}.bam - || exit 1
 done
 
-samtools merge -@ ${CORES} -n -c -p ${OUTFILE} $SAMS || exit 1
-rm $SAMS
+echo SAMTOOLS POSTPROCESSING >&2
+
+rm ${TMPDIR}/tmp.unmapped.${DATAFILE} || exit 1
+samtools merge -@ ${CORES} -n -c -p ${TMPDIR}/tmp.stampy.${OUTFILE} $BAMS || exit 1
+rm $BAMS || exit 1
+samtools merge -@ ${CORES} -n -c -p ${TMPDIR}/tmp.namesorted.${OUTFILE} ${TMPDIR}/tmp.stampy.${OUTFILE} ${TMPDIR}/tmp.mapped.bam || exit 1
+rm ${TMPDIR}/tmp.stampy.${OUTFILE} ${TMPDIR}/tmp.mapped.bam || exit 1
+samtools sort -@ ${CORES} -m 2G -o ${OUTFILE} -O bam -T ${TMPDIR}/ ${TMPDIR}/tmp.namesorted.${OUTFILE} || exit 1
+rm ${TMPDIR}/tmp.namesorted.${OUTFILE} || exit 1
