@@ -7,9 +7,6 @@
 USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam"
 
 CORES=48
-REFERENCEFILE=$1
-DATAFILE=$2
-OUTFILE=$3
 TMPDIR=/tmp/
 QUAL=13
 
@@ -44,6 +41,9 @@ if [ $# -ne 3 ]; then			#if we forget arguments
 	echo $USAGE	#remind us
 	exit 1				#and exit with error
 fi
+REFERENCEFILE=$1
+DATAFILE=$2
+OUTFILE=$3
 
 
 
