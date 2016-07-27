@@ -6,17 +6,13 @@
 USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] reference.fa data/ out.bam"
 
 
-if [ $# -ne 3 ]; then			#if we forget arguments
-	echo $USAGE	#remind us
-	exit 1				#and exit with error
-fi
+
 
 #Here are some things you might want to change:
 RGPL=ILLUMINA #We assume Illumina; if we're wrong, change it here.
 CORES=48
 
 while getopts :t:p:h opt; do
-	shift $((OPTIND-1))
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -39,7 +35,11 @@ while getopts :t:p:h opt; do
 	esac
 done
 
-
+shift $((OPTIND-1)) # get operands
+if [ $# -ne 3 ]; then			#if we forget arguments
+	echo $USAGE	#remind us
+	exit 1				#and exit with error
+fi
 
 #Some variables
 REFERENCEFILE=$1

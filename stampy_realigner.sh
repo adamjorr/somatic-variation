@@ -3,15 +3,40 @@
 #stampy_realigner.sh reference.fasta data.bam out.bam
 #Takes reference and realigns all reads in the data.bam file.
 
-if [ $# -ne 3 ]; then			#if we forget arguments
-	echo "Usage: $0 reference.fasta data.bam out.bam"	#remind us
-	exit 1				#and exit with error
-fi
+USAGE="Usage: $0 [-t THREADS] reference.fasta data.bam out.bam"
 
 CORES=48
 REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
+
+while getopts :t:h opt; do
+	case $opt in
+		t)
+			CORES=$OPTARG
+			;;
+		h)
+			echo $USAGE >&2
+			exit 1
+			;;
+	    \?)
+			echo "Invalid option: -$OPTARG ; use -h for help." >&2
+			exit 1
+			;;
+		:)
+			echo "Option -$OPTARG requires an argument. Use -h for help." >&2
+			exit 1
+			;;
+	esac
+done
+
+shift $((OPTIND-1)) # get operands
+if [ $# -ne 3 ]; then			#if we forget arguments
+	echo $USAGE	#remind us
+	exit 1				#and exit with error
+fi
+
+
 
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
 	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
