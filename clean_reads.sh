@@ -47,6 +47,7 @@ while getopts :t:d:k:f:s:r:m:c:h opt; do
 		c)
 			echo "c was set to $OPTARG" >&2
 			COVERAGE=$OPTARG
+			;;
 		h)
 			echo $USAGE >&2
 			exit 1
