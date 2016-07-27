@@ -74,3 +74,24 @@ Deviations
 
 To make things easier to handle in Rcorrector, we concatenated all the reads into two files (one for each pair). This ended up making things a lot more difficult and made it impossible to add read groups to the initial alignment. This *shouldn't* make a difference, but may have affected the consensus reference. I would **not** recommend doing this in the future.
 
+
+Recent Additions and Simplifications
+====================================
+Do kmer correction with:
+```bash
+bash clean_reads.sh ../data/
+```
+
+Then align with bwa:
+```bash
+bash bwa_aligner.sh ref.fa ./corrected_data/ bwa1.bam
+```
+
+Next, realign with Stampy:
+```bash
+bash stampy_realigner.sh ref.fa bwa1.bam stampy1.bam
+```
+
+TBC
+
+
