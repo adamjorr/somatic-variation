@@ -15,7 +15,6 @@ MAX_MEMORY=64e9 #max memory to be given to khmer
 COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
 
 while getopts :t:d:k:f:s:r:m:c:h opt; do
-	shift $((OPTIND-1))
 	case $opt in
 		t)
 			echo "t was set to $OPTARG" >&2
@@ -62,6 +61,8 @@ while getopts :t:d:k:f:s:r:m:c:h opt; do
 			;;
 	esac
 done
+
+shift $((OPTIND-1))
 
 if [ $# -ne 1 ]; then
 	echo $USAGE >&2
