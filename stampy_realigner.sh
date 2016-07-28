@@ -62,7 +62,7 @@ rm ${TMPDIR}/tmp.sorted.${DATAFILE} || exit 1
 samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -o ${TMPDIR}/tmp.mapped.bam -U ${TMPDIR}/tmp.unmapped.bam ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
 rm ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
 
-for GROUP in $(samtools view -H ${TMPDIR}/tmp.unmapped.${DATAFILE} | grep ^@RG | cut -f2); do
+for GROUP in $(samtools view -H ${TMPDIR}/tmp.unmapped.bam | grep ^@RG | cut -f2); do
 	echo $GROUP >&2
 	BAMS=$(echo $BAMS ${TMPDIR}/${GROUP#ID:}.bam) || exit 1
         stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.${DATAFILE} --readgroup=${GROUP} |
@@ -71,7 +71,7 @@ done
 
 echo SAMTOOLS POSTPROCESSING >&2
 
-rm ${TMPDIR}/tmp.unmapped.${DATAFILE} || exit 1
+rm ${TMPDIR}/tmp.unmapped.bam || exit 1
 samtools merge -@ ${CORES} -n -c -p ${TMPDIR}/tmp.stampy.${OUTFILE} $BAMS || exit 1
 rm $BAMS || exit 1
 samtools merge -@ ${CORES} -n -c -p ${TMPDIR}/tmp.namesorted.${OUTFILE} ${TMPDIR}/tmp.stampy.${OUTFILE} ${TMPDIR}/tmp.mapped.bam || exit 1
