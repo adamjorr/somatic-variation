@@ -8,7 +8,7 @@ OUTPUT=consensus.fa
 CHAINFILE=consensus.chain
 BCFTOOLSFILE=bcftools_calls.vcf.gz
 
-while getopts :t:h opt; do
+while getopts :t:b:c:f:o:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
