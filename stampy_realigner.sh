@@ -65,8 +65,9 @@ rm ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
 for GROUP in $(samtools view -H ${TMPDIR}/tmp.unmapped.bam | grep ^@RG | cut -f2); do
 	echo $GROUP >&2
 	BAMS=$(echo $BAMS ${TMPDIR}/${GROUP#ID:}.bam) || exit 1
-        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.bam --readgroup=${GROUP} |
-        samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/${GROUP#ID:}.bam - || exit 1
+        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.bam --readgroup=${GROUP} -o ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
+        samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/${GROUP#ID:}.bam ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
+        rm ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
 done
 
 echo SAMTOOLS POSTPROCESSING >&2
