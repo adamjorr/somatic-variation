@@ -46,14 +46,19 @@ REFERENCEFILE=$1
 DATADIR=$2
 OUTNAME=$3
 FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
+NUMFILES=( $FASTQFILES )
+NUMFILES=${#NUMFILES[@]}
 
 if [[ ! -e ${REFERENCEFILE}.amb || ! -e ${REFERENCEFILE}.ann || ! -e ${REFERENCEFILE}.bwt || ! -e ${REFERENCEFILE}.pac || ! -e ${REFERENCEFILE}.sa ]]; then
 	bwa index ${REFERENCEFILE}
 fi
 
-echo Making BAM files . . .
+echo Making BAM files . . . >&2
 #Make bamfiles from the FASTQs
+PROGRESS=0
 for F in $FASTQFILES; do
+	((PROGRESS++))
+	echo Progress: $PROGRESS / $NUMFILES >&2
 	BASEFNAME=$(basename $F) || exit
 	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam) || exit
 	if [ -e ${BASEFNAME%R1*}.bam ]; then samtools quickcheck ${BASEFNAME%R1*}.bam || rm ${BASEFNAME%R1*}.bam; fi
@@ -67,7 +72,7 @@ for F in $FASTQFILES; do
 	fi
 done
 
-echo Merging . . .
+echo Merging . . . >&2
 samtools merge -@ $CORES $OUTNAME $BAMS || exit
 
 #Now clean up
