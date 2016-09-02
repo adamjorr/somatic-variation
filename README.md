@@ -16,9 +16,12 @@ Experimental Overview
 See the section on replicating our experiment for more information.
 
 
+Pipeline Documentation
+======================
 
 Creating A Reference From a Similar Species with Iterative Mapping
-==================================================================
+------------------------------------------------------------------
+
 Do kmer correction with:
 ```bash
 bash clean_reads.sh ../data/
