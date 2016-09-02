@@ -84,13 +84,16 @@ bash clean_reads.sh ../data/
 
 Then align with bwa:
 ```bash
-bash bwa_aligner.sh ref.fa ./corrected_data/ bwa1.bam
+bash bwa_aligner.sh ref.fa ./cleaned_reads/sliced/ bwa1.bam
 ```
 
 Next, realign with Stampy:
 ```bash
 bash stampy_realigner.sh ref.fa bwa1.bam stampy1.bam
 ```
+
+Now obtain a consensus with
+
 
 TBC
 

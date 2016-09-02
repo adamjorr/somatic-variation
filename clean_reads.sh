@@ -77,17 +77,18 @@ fi
 
 READ_DIRECTORY=$1
 mkdir -p $DEST_DIRECTORY
-
+mkdir -p ${DEST_DIRECTORY}/corrected
+mkdir -p ${DEST_DIRECTORY}/sliced
 
 # Run Rcorrector with the script included in the program:
 for F in $(find $DEST_DIRECTORY -name $FILE_PATTERN); do
-	$RCORRECTOR -1 $F -2 ${F/$SEARCH_STRING/$REPLACE_STRING} -k $KMER_SIZE -t $THREADS -od $DEST_DIRECTORY/corrected/ || exit 1
+	$RCORRECTOR -1 $F -2 ${F/$SEARCH_STRING/$REPLACE_STRING} -k $KMER_SIZE -t $THREADS -od ${DEST_DIRECTORY}/corrected/ || exit 1
 done
 
 # Build a graph and filter on estimated coverage using Khmer. Check [this fork](https://github.com/adamjorr/khmer):
-$LOAD_COUNTING -ksize $KMER_SIZE -T $THREADS -M 64e9 khmer_count.graph $DEST_DIRECTORY/corrected/*.fq || exit 1
+$LOAD_COUNTING -ksize $KMER_SIZE -T $THREADS -M 64e9 khmer_count.graph ${DEST_DIRECTORY}/corrected/*.fq || exit 1
 
 # For a parallelized version, use:
-parallel -j $THREADS 'F={}; G={/.}; $SLICE_BY_COV -M $COVERAGE khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} ${G}_sliced.fq ${G/$SEARCH_STRING/$REPLACE_STRING}_sliced.fq ${G/$SEARCH_STRING/}_singletons.fq' ::: $(find $DEST_DIRECTORY/corrected/ -name "*${SEARCH_STRING}*.fq") || exit 1
+parallel -j $THREADS 'F={}; G={/.}; $SLICE_BY_COV -M $COVERAGE khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} ${DEST_DIRECTORY}/sliced/${G}_sliced.fq ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/$REPLACE_STRING}_sliced.fq ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/}_singletons.fq' ::: $(find $DEST_DIRECTORY/corrected/ -name "*${SEARCH_STRING}*.fq") || exit 1
 
 exit
