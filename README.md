@@ -82,7 +82,7 @@ Do kmer correction with:
 bash clean_reads.sh ../data/
 ```
 
-Then align with bwa:
+Then align to a reference with bwa:
 ```bash
 bash bwa_aligner.sh ref.fa ./cleaned_reads/sliced/ bwa1.bam
 ```
