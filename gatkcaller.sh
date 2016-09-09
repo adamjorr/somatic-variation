@@ -68,7 +68,7 @@ $PICARD BuildBamIndex INPUT=dedup.bam
 java -jar ${GATK} -T RealignerTargetCreator -nt $CORES -R ${REFERENCEFILE} -I dedup.bam -o forIndelAligner.intervals || exit 1
 split -d -n l/${CORES} --additional-suffix=.intervals forIndelAligner.intervals tmp_intervals_ || exit 1
 parallel --halt 2 java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I dedup.bam -targetIntervals tmp_intervals_{}.intervals -o tmp_realigned_{}.bam ::: $(seq -f %02.0f 0 $((CORES-1))) || exit 1
-echo tmp_realigned_*.bam  | xargs -d' ' -n 1 -i samtools sort -@ ${CORES} -T ./tmp/tmp -m 2G -o srt_{} {} || exit 1
+echo -n tmp_realigned_*.bam  | xargs -d' ' -n 1 -i samtools sort -@ ${CORES} -T ./tmp/tmp -m 2G -o srt_{} {} || exit 1
 samtools merge -@ ${CORES} -c -p realigned.bam srt_tmp_realigned_*.bam || exit 1
 java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I realigned.bam -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o first-calls.vcf || exit 1
 java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I realigned.bam -R ${REFERENCEFILE} --knownSites first-calls.vcf -o recal_data.table || exit 1
