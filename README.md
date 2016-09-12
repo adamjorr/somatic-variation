@@ -74,7 +74,7 @@ This script uses BWA to align reads in the given directory to the given referenc
 ###stampy_realigner.sh
 Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam
 
-This script uses Stampy to realign unmapped reads or reads lower than QUAL in data.bam and outputs to out.bam. The given reference should be the same used to generate data.bam .
+This script uses Stampy to realign unmapped reads and reads lower than QUAL in data.bam and outputs to out.bam. The given reference should be the same used to generate data.bam .
 A temporary directory to be used can be specified with -d; the default is /tmp/.
 
 Warning: Stampy tends to crash when Samtools 1.3 is used. Ensure that Samtools 1.2 is at the top of the path before running this script.
