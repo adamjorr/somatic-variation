@@ -3,7 +3,7 @@
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
-USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] reference.fa data/ out.bam"
+USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] -r reference.fa -o out.bam data/"
 
 
 
@@ -11,14 +11,22 @@ USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] reference.fa data/ out.bam"
 #Here are some things you might want to change:
 RGPL=ILLUMINA #We assume Illumina; if we're wrong, change it here.
 CORES=48
+REFERENCEFILE=""
+OUTNAME=""
 
-while getopts :t:p:h opt; do
+while getopts :t:p:r:o:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
 			;;
 		p)
 			RGPL=$OPTARG
+			;;
+		r)
+			REFERENCEFILE=$OPTARG
+			;;
+		o)
+			OUTNAME=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -36,15 +44,25 @@ while getopts :t:p:h opt; do
 done
 
 shift $((OPTIND-1)) # get operands
-if [ $# -ne 3 ]; then			#if we forget arguments
+if [ $# -ne 1 ]; then			#if we forget arguments
 	echo $USAGE	#remind us
 	exit 1				#and exit with error
 fi
 
+if [ $REFERENCEFILE == "" ]; then
+	echo $USAGE
+	echo "Reference file required."
+	exit 1
+fi
+
+if [ $OUTNAME == "" ]; then
+	echo $USAGE
+	echo "Output file name required."
+	exit 1
+fi
+
 #Some variables
-REFERENCEFILE=$1
-DATADIR=$2
-OUTNAME=$3
+DATADIR=$1
 FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
 NUMFILES=( $FASTQFILES )
 NUMFILES=${#NUMFILES[@]}
