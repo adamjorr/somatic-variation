@@ -13,11 +13,49 @@ Software Requirements
  5. Samtools version 1.2 and 1.3.1 or later (version 1.3 and above crashes Stampy, so a version of 1.2 must also be installed.)
  6. Stampy version 1.0.29 (r3755) or later.
  7. Bcftools version 1.3.1 or later
- 8. Tabix version 1.3.1 or later
+ 8. HTSlib version 1.3.1 or later
 
 Software Installation
 ---------------------
-WIP
+###khmer
+```bash
+pip install khmer
+```
+
+###Rcorrector
+```bash
+git clone https://github.com/mourisl/rcorrector.git
+cd rcorrector
+make
+```
+
+###GNU parallel
+Many distributions have packages to install parallel. For Ubuntu:
+```bash
+sudo apt-get install parallel
+```
+
+###BWA
+```bash
+git clone https://github.com/lh3/bwa.git
+cd bwa
+make
+```
+
+###Samtools, Bcftools, and HTSlib
+Visit the [htslib website](www.htslib.org/download/) for more information. In summary:
+
+Download the samtools release from www.htslib.org/download/, extract archive, and enter the directory. Then,
+```bash
+make
+make prefix=/where/to/install install
+```
+
+###Stampy
+Stampy requires the user to register before downloading the software. Visit [this link](http://www.well.ox.ac.uk/software-download-registration) to do so. Once this is done, use the link provided in the registration email to download the archive. Extract it, then build the software with make.
+```bash
+make
+```
 
 Input File Requirements
 -----------------------
