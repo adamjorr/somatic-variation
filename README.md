@@ -6,7 +6,7 @@ Many scripts in this pipeline use temporary files that are prone to clobbering, 
 
 Software Requirements
 ---------------------
- 1. [This fork](https://github.com/adamjorr/khmer) of khmer.
+ 1. [khmer](https://github.com/dib-lab/khmer) version 2.0+67.g136bb3d.dirty or later.
  2. [Rcorrector](https://github.com/mourisl/rcorrector) commit `eba3f79` or later.
  3. GNU parallel version 20160722 or later.
  4. BWA version 0.7.15-r1140 or later.
