@@ -61,7 +61,7 @@ Input File Requirements
 -----------------------
 For creation of a psuedo-reference:
  * A reference to a closely-related species in FASTA format
- * Paired sequencing reads in FASTQ format residing in a single directory, with reads from the first mate labelled with an R1 and reads from the second mate labelled with an R2. For example, reads_R1.fq and reads_R2.fq
+ * Paired sequencing reads in FASTQ format residing in a single directory, with reads from the first mate in a file labelled with an R1 and reads from the second mate in a file labelled with an R2. For example, reads_R1.fq and reads_R2.fq
 
 Experimental Overview
 ---------------------
