@@ -52,7 +52,7 @@ make prefix=/where/to/install install
 ```
 
 ###Stampy
-Stampy requires the user to register before downloading the software. Visit [this link](http://www.well.ox.ac.uk/software-download-registration) to do so. Once this is done, use the link provided in the registration email to download the archive. Extract it, then build the software with make.
+Stampy requires the user to register before downloading the software. Visit [this link](http://www.well.ox.ac.uk/software-download-registration) to do so. Once this is done, use the link provided in the registration email to download the archive. Extract it, enter the directory, then build the software with make.
 ```bash
 make
 ```
