@@ -45,7 +45,7 @@ make
 ###Samtools, Bcftools, and HTSlib
 Visit the [htslib website](www.htslib.org/download/) for more information. In summary:
 
-Download the samtools release from www.htslib.org/download/, extract archive, and enter the directory. Then,
+Download the release from www.htslib.org/download/, extract the archive, and enter the directory. Then,
 ```bash
 make
 make prefix=/where/to/install install
