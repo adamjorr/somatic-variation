@@ -85,7 +85,7 @@ bash clean_reads.sh ../data/
 
 Then align to a reference with bwa:
 ```bash
-bash bwa_aligner.sh ref.fa ./cleaned_reads/sliced/ bwa1.bam
+bash bwa_aligner.sh -r ref.fa -o bwa1.bam ./cleaned_reads/sliced/
 ```
 
 Next, realign with Stampy:
