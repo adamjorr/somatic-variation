@@ -111,7 +111,7 @@ Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_P
  * **-2:** pattern to find second mate in pair [R2]
  * **-m:** max memory to give to khmer [64e9]
  * **-c:** max coverage to allow [40000]
- * **READ_DIRECTORY** directory to search for reads to clean
+ * **READ_DIRECTORY:** directory to search for reads to clean
 
 This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY.
 The -d option changes which directory to put output in and defaults to ./cleaned_reads .
