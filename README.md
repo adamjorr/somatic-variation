@@ -101,14 +101,50 @@ bash create_consensus.sh -o consensus.fa ref.fa stampy1.bam
 This process can be repeated, using the new consensus as a reference.
 
 ###clean_reads.sh
-Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-s SEARCH_STRING] [-r REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY
+Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY
 
-This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. The -m flag can be used to change the amount of memory given to Khmer. The -k flag changes the kmer size to use. The -f flag is a pattern that finds reads in READ_DIRECTORY matching that pattern; by default, it is `*R1*`. The -s and -r flags are the search and replace strings used to find the file containing the mates specified in the file found by the FILE_PATTERN. The default values are R1 and R2. For example, if read mates are specified only by 1 or 2 and not by R1 and R2, -s should be 1 and -r should be 2, so that the mates of reads1.fq are properly found in reads2.fq. The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
+ * **-t:** number of threads to use [48]
+ * **-d:** directory to put output in [./cleaned_reads]
+ * **-k:** size of kmer to use [32]
+ * **-f:** pattern matched to find reads ['*.fastq']
+ * **-1:** pattern to find first mate in pair [R1]
+ * **-2:** pattern to find second mate in pair [R2]
+ * **-m:** max memory to give to khmer [64e9]
+ * **-c:** max coverage to allow [40000]
+ * **READ_DIRECTORY** directory to search for reads to clean
+
+This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY.
+The -d option changes which directory to put output in and defaults to ./cleaned_reads .
+The -k option changes the kmer size to use and defaults to 32.
+The -f flag is a pattern that finds reads in READ_DIRECTORY matching that pattern; by default, it is '*.fastq' .
+The -1 and -2 flags are the search and replace strings used to find the file containing the mates specified in the file found by the FILE_PATTERN. The default values are R1 and R2. For example, if read mates are specified only by 1 or 2 and not by R1 and R2, -s should be 1 and -r should be 2, so that the mates of reads1.fq are properly found in reads2.fq.
+The -m flag controls how much memory is allocated to khmer and defaults to 64e9.
+The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
 
 ###bwa_aligner.sh
-Usage: bwa_aligner.sh [-t THREADS] [-p RG_PLATFORM] -r reference.fa -o out.bam data/
+Usage: bwa_aligner.sh [-t THREADS] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/
 
-This script uses BWA to align reads in the given directory to the given reference and outputs a bamfile. The -p flag can be used to set the PLATFORM flag in the resultant BAM file; the default value is ILLUMINA.
+ * **-t:** number of threads to use [48]
+ * **-p:** PLATFORM flag for BAM file [ILLUMINA]
+ * **-q:** pattern to find reads ['*.fastq']
+ * **-1:** pattern to find first mate in pair [R1]
+ * **-2:** pattern to find second mate in pair [R2]
+ * **-r:** reference to align to with BWA
+ * **-o:** BAM file to write alignment to
+ * **data/:** directory to search for reads
+
+This script uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
+The -p flag can be used to set the PLATFORM flag in the resultant BAM file; the default value is ILLUMINA.
+The -1, -2, and -q flags change how the script identifies the files containing reads to align.
+-q is a pattern that is searched for to identify reads with the default value '*.fastq' .
+To find files ending with '.fq', for example, use -q '*.fq'.
+Remember to use quotes so the shell doesn't expand the wildcard.
+The -1 and -2 options control how the script finds which of the FASTQ files given are the forward and reverse mate.
+By default, -1 is R1 and -2 is R2.
+The script will identify the first mates by looking for which FASTQ files contain the value of -1 in their names.
+It will then match these files with their mates by substituting the value of -2.
+The pairs of reads should be in the same directory and have the same name except for the substitution of the value of -1 for the value of -2.
+For example, in a data directory with reads_R1.fastq and reads_R2.fastq, by default the script will identify the two files by their suffixes, identify the file containing R1 as the first set of reads and substitute R1 with R2 to identify the file containing the second set of reads.
 
 ###stampy_realigner.sh
 Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam

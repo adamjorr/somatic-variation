@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #bash clean_reads.sh -t THREADS -d DEST_DIRECTORY -k KMER_SIZE -f FILE_PATTERN -s SEARCH_STRING -r REPLACE_STRING [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY 
-USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-s SEARCH_STRING] [-r REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY"
+USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 SEARCH_STRING] [-2 REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY"
 
 RCORRECTOR="perl run_rcorrector.pl"
 LOAD_COUNTING="scripts/load-into-counting.py"
@@ -8,9 +8,9 @@ SLICE_BY_COV="scripts/slice-paired-reads-by-coverage.py"
 THREADS=48
 DEST_DIRECTORY=./cleaned_reads
 KMER_SIZE=32
-FILE_PATTERN='*R1*.fastq' #pattern to find first set of reads
+FILE_PATTERN='*.fastq' #pattern to find first set of reads
 SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
-REPLACE_STRING='R2' #pattern for search/replace to find second set of reads
+REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 MAX_MEMORY=64e9 #max memory to be given to khmer
 COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
 
@@ -32,12 +32,12 @@ while getopts :t:d:k:f:s:r:m:c:h opt; do
 			echo "f was set to $OPTARG" >&2
 			FILE_PATTERN=$OPTARG
 			;;
-		s)
-			echo "s was set to $OPTARG" >&2
+		1)
+			echo "1 was set to $OPTARG" >&2
 			SEARCH_STRING=$OPTARG
 			;;
-		r)
-			echo "r was set to $OPTARG" >&2
+		2)
+			echo "2 was set to $OPTARG" >&2
 			REPLACE_STRING=$OPTARG
 			;;
 		m)
@@ -81,12 +81,12 @@ mkdir -p ${DEST_DIRECTORY}/corrected
 mkdir -p ${DEST_DIRECTORY}/sliced
 
 # Run Rcorrector with the script included in the program:
-for F in $(find $DEST_DIRECTORY -name $FILE_PATTERN); do
+for F in $(find $DEST_DIRECTORY -name $FILE_PATTERN -and -name '*$SEARCH_STRING*'); do
 	$RCORRECTOR -1 $F -2 ${F/$SEARCH_STRING/$REPLACE_STRING} -k $KMER_SIZE -t $THREADS -od ${DEST_DIRECTORY}/corrected/ || exit 1
 done
 
 # Build a graph and filter on estimated coverage using Khmer. Check [this fork](https://github.com/adamjorr/khmer):
-$LOAD_COUNTING -ksize $KMER_SIZE -T $THREADS -M 64e9 khmer_count.graph ${DEST_DIRECTORY}/corrected/*.fq || exit 1
+$LOAD_COUNTING -ksize $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*.fq || exit 1
 
 # For a parallelized version, use:
 parallel -j $THREADS 'F={}; G={/.}; $SLICE_BY_COV -M $COVERAGE khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} ${DEST_DIRECTORY}/sliced/${G}_sliced.fq ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/$REPLACE_STRING}_sliced.fq ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/}_singletons.fq' ::: $(find $DEST_DIRECTORY/corrected/ -name "*${SEARCH_STRING}*.fq") || exit 1

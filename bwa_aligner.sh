@@ -3,7 +3,7 @@
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
-USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] -r reference.fa -o out.bam data/"
+USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/"
 
 
 
@@ -11,10 +11,13 @@ USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] -r reference.fa -o out.bam data/"
 #Here are some things you might want to change:
 RGPL=ILLUMINA #We assume Illumina; if we're wrong, change it here.
 CORES=48
+FILE_PATTERN='*.fastq' #pattern to find first set of reads
+SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
+REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 REFERENCEFILE=""
 OUTNAME=""
 
-while getopts :t:p:r:o:h opt; do
+while getopts :t:p:r:1:2:o:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -25,8 +28,17 @@ while getopts :t:p:r:o:h opt; do
 		r)
 			REFERENCEFILE=$OPTARG
 			;;
+		1)
+			SEARCH_STRING=$OPTARG
+			;;
+		2)
+			REPLACE_STRING=$OPTARG
+			;;
 		o)
 			OUTNAME=$OPTARG
+			;;
+		q)
+			FILE_PATTERN=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -63,7 +75,7 @@ fi
 
 #Some variables
 DATADIR=$1
-FASTQFILES=$(find $DATADIR -name '*R1*.fastq') || exit
+FASTQFILES=$(find $DATADIR -name '$FILE_PATTERN' -and -name '*$SEARCH_STRING*') || exit
 NUMFILES=( $FASTQFILES )
 NUMFILES=${#NUMFILES[@]}
 
@@ -78,15 +90,19 @@ for F in $FASTQFILES; do
 	((PROGRESS++))
 	echo Progress: $PROGRESS / $NUMFILES >&2
 	BASEFNAME=$(basename $F) || exit
-	BAMS=$(echo $BAMS ${BASEFNAME%R1*}.bam) || exit
-	if [ -e ${BASEFNAME%R1*}.bam ]; then samtools quickcheck ${BASEFNAME%R1*}.bam || rm ${BASEFNAME%R1*}.bam; fi
-	if [ ! -e ${BASEFNAME%R1*}.bam ]; then
+	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit
+	SECONDBASE=$(basename $SECONDMATE) || exit
+	SAMOUT=${BASEFNAME%$SEARCH_STRING*}.sam || exit
+	BAMOUT=${BASEFNAME%$SEARCH_STRING*}.bam || exit
+	BAMS=$(echo $BAMS $BAMOUT) || exit
+	if [ -e $BAMOUT ]; then samtools quickcheck $BAMOUT || rm $BAMOUT; fi #save time if execution was interrupted
+	if [ ! -e $BAMOUT ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit
 		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
 		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
-		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F ${F/R1/R2} > ${BASEFNAME%R1*}.sam
-		samtools sort -@ $CORES -o ${BASEFNAME%R1*}.bam -m 2G -T tmp ${BASEFNAME%R1*}.sam || exit
-		rm ${BASEFNAME%R1*}.sam || exit
+		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE > $SAMOUT
+		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp $SAMOUT || exit
+		rm $SAMOUT || exit
 	fi
 done
 
