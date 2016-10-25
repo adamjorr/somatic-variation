@@ -45,7 +45,7 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-
+mkdir -p $TMPDIR
 
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
 	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1

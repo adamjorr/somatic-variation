@@ -75,7 +75,15 @@ fi
 
 #Some variables
 DATADIR=$1
-FASTQFILES=$(find $DATADIR -name '$FILE_PATTERN' -and -name '*$SEARCH_STRING*') || exit
+FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*") || exit
+
+if [ "$FASTQFILES" == '' ]; then
+	echo "Searching for files that match $FILE_PATTERN and ${SEARCH_STRING} in $DATADIR failed" >&2
+	exit 1
+fi
+
+echo Specified files are: $FASTQFILES >&2
+echo Specified mates are: ${FASTQFILES/$SEARCH_STRING/$REPLACE_STRING} >&2
 NUMFILES=( $FASTQFILES )
 NUMFILES=${#NUMFILES[@]}
 
@@ -89,25 +97,25 @@ PROGRESS=0
 for F in $FASTQFILES; do
 	((PROGRESS++))
 	echo Progress: $PROGRESS / $NUMFILES >&2
-	BASEFNAME=$(basename $F) || exit
-	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit
-	SECONDBASE=$(basename $SECONDMATE) || exit
-	SAMOUT=${BASEFNAME%$SEARCH_STRING*}.sam || exit
-	BAMOUT=${BASEFNAME%$SEARCH_STRING*}.bam || exit
+	BASEFNAME=$(basename $F) || exit 1
+	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit 1
+	SECONDBASE=$(basename $SECONDMATE) || exit 1
+	SAMOUT=${BASEFNAME%$SEARCH_STRING*}.sam || exit 1
+	BAMOUT=${BASEFNAME%$SEARCH_STRING*}.bam || exit 1
 	BAMS=$(echo $BAMS $BAMOUT) || exit
 	if [ -e $BAMOUT ]; then samtools quickcheck $BAMOUT || rm $BAMOUT; fi #save time if execution was interrupted
 	if [ ! -e $BAMOUT ]; then
-		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit
-		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
-		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || exit
+		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
+		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
+		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
 		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE > $SAMOUT
-		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp $SAMOUT || exit
-		rm $SAMOUT || exit
+		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp $SAMOUT || exit 1
+		rm $SAMOUT || exit 1
 	fi
 done
 
 echo Merging . . . >&2
-samtools merge -@ $CORES $OUTNAME $BAMS || exit
+samtools merge -@ $CORES $OUTNAME $BAMS || exit 1
 
 #Now clean up
 rm $BAMS || exit
