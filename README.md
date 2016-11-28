@@ -10,8 +10,8 @@ Software Requirements
  2. [Rcorrector](https://github.com/mourisl/rcorrector) commit `eba3f79` or later.
  3. GNU parallel version 20160722 or later.
  4. BWA version 0.7.15-r1140 or later.
- 5. Samtools version 1.2 and 1.3.1 or later (version 1.3 and above crashes Stampy, so a version of 1.2 must also be installed.)
- 6. Stampy version 1.0.29 (r3755) or later.
+ 5. Samtools version 1.3.1 or later.
+ 6. Stampy version 1.0.30 or later.
  7. Bcftools version 1.3.1 or later
  8. HTSlib version 1.3.1 or later
  9. GATK version TODO or later
