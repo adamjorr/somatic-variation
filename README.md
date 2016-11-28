@@ -172,7 +172,9 @@ TODO
 
 Experimental Replication
 ========================
-WIP. Exact steps to replicate our analysis
+```bash
+do_experiment.sh folder_containing_reads/
+```
 
 
 
