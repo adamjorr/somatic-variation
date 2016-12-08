@@ -5,8 +5,8 @@ USAGE="Usage: $0 [-t THREADS] [-f FILTER] [-c CHAINFILE] [-b BCFTOOLSFILE] [-o O
 CORES=48
 FILTER='AC==1'
 OUTPUT=consensus.fa
-CHAINFILE=consensus.chain
-BCFTOOLSFILE=bcftools_calls.vcf.gz
+CHAINFILE=$(basename ${OUTPUT}.chain)
+BCFTOOLSFILE=$(mktemp --suffix=.vcf.gz bcftools_calls_XXXXXX)
 
 while getopts :t:b:c:f:o:h opt; do
 	case $opt in
