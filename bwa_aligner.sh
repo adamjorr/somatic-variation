@@ -102,7 +102,7 @@ for F in $FASTQFILES; do
 	SECONDBASE=$(basename $SECONDMATE) || exit 1
 	SAMOUT=${BASEFNAME%$SEARCH_STRING*}.sam || exit 1
 	BAMOUT=${BASEFNAME%$SEARCH_STRING*}.bam || exit 1
-	BAMS=$(echo $BAMS $BAMOUT) || exit
+	BAMS=$(echo $BAMS $BAMOUT) || exit 1
 	if [ -e $BAMOUT ]; then samtools quickcheck $BAMOUT || rm $BAMOUT; fi #save time if execution was interrupted
 	if [ ! -e $BAMOUT ]; then
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
