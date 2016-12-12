@@ -7,7 +7,7 @@
 USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam"
 
 CORES=48
-TMPDIR=/tmp/
+TMPDIR=""
 QUAL=13
 
 while getopts :t:d:q:h opt; do
@@ -45,7 +45,11 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-mkdir -p $TMPDIR
+if [ $TMPDIR == "" ]; then
+	TMPDIR=$(mktemp -d --tmpdir stampy_realigner_tmp_XXXXXX)
+	DELTMPDIR=TRUE
+fi
+
 
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
 	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
@@ -65,9 +69,9 @@ rm ${TMPDIR}/tmp.fixed.${DATAFILE} || exit 1
 for GROUP in $(samtools view -H ${TMPDIR}/tmp.unmapped.bam | grep ^@RG | cut -f2); do
 	echo $GROUP >&2
 	BAMS=$(echo $BAMS ${TMPDIR}/${GROUP#ID:}.bam) || exit 1
-        stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.bam --bamsortmemory=2000000000 --readgroup=${GROUP} -o ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
-        samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/${GROUP#ID:}.bam ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
-        rm ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
+    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M ${TMPDIR}/tmp.unmapped.bam --bamsortmemory=2000000000 --readgroup=${GROUP} -o ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
+    samtools sort -@ ${CORES} -n -m 2G -o ${TMPDIR}/${GROUP#ID:}.bam ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
+    rm ${TMPDIR}/${GROUP#ID:}.stampy.sam || exit 1
 done
 
 echo SAMTOOLS POSTPROCESSING >&2
@@ -79,3 +83,10 @@ samtools merge -@ ${CORES} -n -c -p ${TMPDIR}/tmp.namesorted.${OUTFILE} ${TMPDIR
 rm ${TMPDIR}/tmp.stampy.${OUTFILE} ${TMPDIR}/tmp.mapped.bam || exit 1
 samtools sort -@ ${CORES} -m 2G -o ${OUTFILE} -O bam -T ${TMPDIR}/ ${TMPDIR}/tmp.namesorted.${OUTFILE} || exit 1
 rm ${TMPDIR}/tmp.namesorted.${OUTFILE} || exit 1
+
+if [ $DELTMPDIR == TRUE ]; then
+	rmdir $TMPDIR
+fi
+
+exit 0
+
