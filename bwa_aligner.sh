@@ -100,18 +100,13 @@ for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F) || exit 1
 	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit 1
 	SECONDBASE=$(basename $SECONDMATE) || exit 1
-	SAMOUT=${BASEFNAME%$SEARCH_STRING*}.sam || exit 1
-	BAMOUT=${BASEFNAME%$SEARCH_STRING*}.bam || exit 1
+	BAMOUT=$(mktemp --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
 	BAMS=$(echo $BAMS $BAMOUT) || exit 1
-	if [ -e $BAMOUT ]; then samtools quickcheck $BAMOUT || rm $BAMOUT; fi #save time if execution was interrupted
-	if [ ! -e $BAMOUT ]; then
-		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
-		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
-		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
-		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
-			samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp || exit 1
-		rm $SAMOUT || exit 1
-	fi
+	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
+	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
+	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
+	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
+		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp || exit 1
 done
 
 echo Merging . . . >&2
