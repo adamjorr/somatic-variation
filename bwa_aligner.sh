@@ -108,8 +108,8 @@ for F in $FASTQFILES; do
 		RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
 		RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
 		RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
-		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE > $SAMOUT
-		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp $SAMOUT || exit 1
+		bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
+			samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp || exit 1
 		rm $SAMOUT || exit 1
 	fi
 done
