@@ -6,7 +6,7 @@ CORES=48
 FILTER='AC==1'
 OUTPUT=consensus.fa
 CHAINFILE=$(basename ${OUTPUT}.chain)
-BCFTOOLSFILE=$(mktemp --suffix=.vcf.gz bcftools_calls_XXXXXX)
+BCFTOOLSFILE=""
 
 while getopts :t:b:c:f:o:h opt; do
 	case $opt in
@@ -50,9 +50,17 @@ fi
 REFFILE=$1
 BAMFILE=$2
 
+if [ $BCFTOOLSFILE == "" ]; then
+	BCFTOOLSFILE=$(mktemp --suffix=.vcf.gz bcftools_calls_XXXXXX)
+	BCFTMP=TRUE
+fi
+
 samtools mpileup -uf $REFFILE $BAMFILE | bcftools call --threads $CORES -mv -Ou | bcftools filter --threads $CORES -Oz -o $BCFTOOLSFILE -e $FILTER
 tabix $BCFTOOLSFILE
 cat $REFFILE | bcftools consensus $BCFTOOLSFILE -c $CHAINFILE > $OUTPUT
 
+if [ $BCFTMP == TRUE ]; then
+	rm $BCFTOOLSFILE
+fi
 
 exit
