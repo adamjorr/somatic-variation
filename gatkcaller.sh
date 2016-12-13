@@ -90,7 +90,7 @@ parallel --halt 2 java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I $DE
 rm $DEDUPLIFIEDBAM $METRICFILE $REALIGNERINTERVALS
 echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i samtools sort -@ ${CORES} -T ${TMPDIR}/samtmp -m 2G -o ${REALIGNERINTERVALPREFIX}srt_{}.bam ${REALIGNERINTERVALPREFIX}{}.bam || exit 1
 rm $INTERVALS $REALIGNEDBAMS
-samtools merge -@ ${CORES} -c -p $REALIGNEDMERGEDBAM $SORTEDBAMS || exit 1
+samtools merge -@ ${CORES} -f -c -p $REALIGNEDMERGEDBAM $SORTEDBAMS || exit 1
 samtools index $REALIGNEDMERGEDBAM || exit 1
 rm $SORTEDBAMS
 java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I $REALIGNEDMERGEDBAM -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o $FIRSTCALLS || exit 1
