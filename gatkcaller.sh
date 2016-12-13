@@ -101,6 +101,6 @@ rm $REALIGNEDMERGEDBAM $RECALDATATABLE
 java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I $RECALIBRATEDBAM -R ${REFERENCEFILE} -ploidy 2 -glm BOTH -o $OUTFILE || exit 1
 
 rm $RECALIBRATEDBAM
-rmdir $TMPDIR
+rm -rf $TMPDIR
 
 exit 0
