@@ -13,6 +13,7 @@ GATK=~/bin/GenomeAnalysisTK.jar #Location of your GATK jar
 CORES=48
 TMPOPTION=""
 OUTFILE=/dev/stdout
+NUMNS=30
 
 while getopts :t:p:g:d:o:h opt; do
 	case $opt in
@@ -63,16 +64,25 @@ FILEIN=$2
 DEDUPLIFIEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam dedup_XXX)
 METRICFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.txt metrics_XXX)
 REFERENCEDICT=${REFERENCEFILE%.*}.dict
-REALIGNERINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.intervals forIndelAligner_XXX)
-REALIGNERINTERVALPREFIX=${TMPDIR}/tmp_intervals_
+FULLINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.interval_list fullIntervals_XXX)
+SCATTEREDINTERVALDIR=$(mktemp --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
+SCATTEREDFIRSTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_first_calls_XXX)
 SUFFIXES=$(seq -f %02.0f 0 $((CORES-1)))
-INTERVALS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.intervals )
-REALIGNEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.bam)
-SORTEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}srt_{}.bam)
-REALIGNEDMERGEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam realigned_XXX)
+SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR first_calls_{}_XXXXXX)
+CMDFIRSTCALLS=$(echo $SCATTEREDFIRSTCALLS | tr ' ' '\n' | xargs -i echo -V {})
+JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf first_calls_XXX)
 RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXX)
-FIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf first_calls_XXX)
-RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
+SCATTEREDOUTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_output_calls_XXX)
+SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR out_call_{}_XXXXXX)
+CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo -V {})
+
+# REALIGNERINTERVALPREFIX=${TMPDIR}/tmp_intervals_
+
+# INTERVALS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.intervals )
+# REALIGNEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.bam)
+# SORTEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}srt_{}.bam)
+# REALIGNEDMERGEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam realigned_XXX)
+# RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
 
 $PICARD MarkDuplicates INPUT=$FILEIN OUTPUT=$DEDUPLIFIEDBAM METRICS_FILE=$METRICFILE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit 1
 
@@ -83,24 +93,21 @@ fi
 $PICARD CreateSequenceDictionary REFERENCE=${REFERENCEFILE} OUTPUT=${REFERENCEDICT}
 $PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
 
-#Now we use GATK to recalibrate our quality scores and give us a VCF.
-java -jar ${GATK} -T RealignerTargetCreator -nt $CORES -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -o $REALIGNERINTERVALS || exit 1
-split -d -n l/${CORES} --additional-suffix=.intervals $REALIGNERINTERVALS ${REALIGNERINTERVALPREFIX} || exit 1
-parallel --halt 2 java -jar ${GATK} -T IndelRealigner -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -targetIntervals ${REALIGNERINTERVALPREFIX}{}.intervals -o ${REALIGNERINTERVALPREFIX}{}.bam ::: $SUFFIXES || exit 1
-rm $DEDUPLIFIEDBAM $METRICFILE $REALIGNERINTERVALS
-echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i samtools sort -@ ${CORES} -T ${TMPDIR}/samtmp -m 2G -o ${REALIGNERINTERVALPREFIX}srt_{}.bam ${REALIGNERINTERVALPREFIX}{}.bam || exit 1
-rm $INTERVALS $REALIGNEDBAMS
-samtools merge -@ ${CORES} -f -c -p $REALIGNEDMERGEDBAM $SORTEDBAMS || exit 1
-samtools index $REALIGNEDMERGEDBAM || exit 1
-rm $SORTEDBAMS
-java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I $REALIGNEDMERGEDBAM -R ${REFERENCEFILE} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -glm BOTH -o $FIRSTCALLS || exit 1
-java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $REALIGNEDMERGEDBAM -R ${REFERENCEFILE} --knownSites $FIRSTCALLS -o $RECALDATATABLE || exit 1
-rm $FIRSTCALLS
-java -jar ${GATK} -T PrintReads -nct $CORES -I $REALIGNEDMERGEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM || exit 1
-rm $REALIGNEDMERGEDBAM $RECALDATATABLE
-java -jar ${GATK} -T UnifiedGenotyper -nt $CORES -I $RECALIBRATEDBAM -R ${REFERENCEFILE} -ploidy 2 -glm BOTH -o $OUTFILE || exit 1
+#GATK TO RECALIBRATE QUAL SCORES + CALL VARIANTS
+$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}
+$PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
+SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list')
+parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS || exit 1
+java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -assumeSorted -out ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS}
+rm $SCATTEREDFIRSTCALLS
+java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --knownSites $JOINEDFIRSTCALLS -o $RECALDATATABLE || exit 1
+rm $JOINEDFIRSTCALLS
+java -jar ${GATK} -T PrintReads -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM || exit 1
+rm $DEDUPLIFIEDBAM $RECALDATATABLE
+parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS || exit 1
+rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
+java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -assumeSorted -out ${OUTFILE} ${CMDOUTCALLS}
 
-rm $RECALIBRATEDBAM
 rm -rf $TMPDIR
 
 exit 0
