@@ -10,7 +10,7 @@ filt_with_replicates - Filter a VCF using replicate information.
 
 =head1 SYNOPSIS
 
-perl filt_with_replicates.pl [-s | --strict] [-g | --grouped int] [-h | -? | --help] <vcfile.vcf >filtered.vcf
+perl filt_with_replicates.pl [-s | --strict] [-m | --majority] [-g | --grouped int] [-h | -? | --help] <vcfile.vcf >filtered.vcf
 
 Options:
 
@@ -21,6 +21,8 @@ Options:
 =item --grouped		VCF samples aren't named, but in groups of int.
 
 =item --strict		Use strict filtering
+
+=item --majority 	Use majority rule filtering
 
 =back
 
@@ -61,9 +63,11 @@ use Pod::Usage;
 
 my $strict = '';
 my $grouped = 0;
+my $majorityrule = '';
 my $help = 0;
 GetOptions(	'strict|s' => \$strict,
 			'grouped|g=i' => \$grouped,
+			'majority|m' => \$majorityrule
 			'help|h|?' => \$help);
 pod2usage(1) if $help;
 
@@ -123,23 +127,23 @@ and there is a sample which differs from the others.
 =cut
 
 sub strict_filter{
-	while (my $record = $vcf -> next_data_array()){
+	while (my $record = $vcf -> next_data_array()){ #iterate over data in the vcf
 		my $stop = 0;
 		my @allgts;
-		for my $sample (keys %replicates){
-			my @rep = @{$replicates{$sample}};
-			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep;
-			if (@genotype != grep{$_ eq $genotype[0]} @genotype){
-				#not equal
-				$stop = 1;
-				last;
+		for my $sample (keys %replicates){ #iterate over each sample
+			my @rep = @{$replicates{$sample}}; #get the column numbers of the replicates for the sample
+			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotypes of the replicates
+			if (@genotype != grep{$_ eq $genotype[0]} @genotype){ #if not all the genotypes match
+				$stop = 1; #stop
+				last; #don't consider other samples
 			}
-			next if ($genotype[0] eq './.');
+			#otherwise all GTs for this sample match
+			next if ($genotype[0] eq './.'); #skip this sample if all GTs are missing
 			push @allgts, @genotype;
 		}
-		next if $stop == 1;
-		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #Comment this line if you want ALL
-		print join("\t",@{$record}) . "\n";
+		next if $stop == 1; #skip this record if we've decided to stop
+		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #skip if there is no variation in GTs
+		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
 	}
 }
 
@@ -155,20 +159,20 @@ and there is a sample which differs from the others.
 =cut
 
 sub basic_filter{
-	while (my $record = $vcf -> next_data_array()){
+	while (my $record = $vcf -> next_data_array()){ #iterate over data in the vcf
 		my @allgts;
-		for my $sample (keys %replicates){
-			my @rep = @{$replicates{$sample}};
-			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep;
-			if (@genotype != grep{$_ eq $genotype[0]} @genotype){
-				#not equal
-				map { @{$record}[$vcf -> get_column_index( $_ )] = './.:0,0:0.00' } @rep;
+		for my $sample (keys %replicates){ #iterate over each sample
+			my @rep = @{$replicates{$sample}}; #get the column numbers of the replicates for the sample
+			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotype of each replicate
+			if (@genotype != grep{$_ eq $genotype[0]} @genotype){ #if there is some genotype that doesn't match all the others of this sample
+				map { @{$record}[$vcf -> get_column_index( $_ )] = './.:0,0:0.00' } @rep; #change all the genotypes to ./. and go to the next sample
 				next;
 			}
-			next if ($genotype[0] eq './.');
+			#otherwise, all the genotypes match
+			next if ($genotype[0] eq './.'); #but skip this sample anyway if they are all missing GTs
 			push @allgts, @genotype;
 		}
-		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #Comment this line if you want ALL
-		print join("\t",@{$record}) . "\n";
+		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #skip if there is no variation in GTs
+		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
 	}
 }
