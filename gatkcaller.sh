@@ -5,7 +5,7 @@
 #requires samtools, picard-tools, the GATK, and bowtie2
 
 #http://tldp.org/LDP/abs/html/string-manipulation.html is a great guide for manipulating strings in bash
-USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-o OUTFILE] reference.fasta data.bam"
+USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-b BEDFILE] [-o OUTFILE] reference.fasta data.bam"
 
 #Here are some things you might want to change:
 PICARD="picard" #How do I call picard on this system?
@@ -14,8 +14,9 @@ CORES=48
 TMPOPTION=""
 OUTFILE=/dev/stdout
 NUMNS=30
+BEDFILE=""
 
-while getopts :t:p:g:d:o:h opt; do
+while getopts :t:p:g:d:b:o:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -28,6 +29,9 @@ while getopts :t:p:g:d:o:h opt; do
 			;;
 		d)
 			TMPOPTION=$OPTARG
+			;;
+		b)
+			BEDFILE=$OPTARG
 			;;
 		o)
 			OUTFILE=$OPTARG
@@ -60,6 +64,11 @@ TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
 REFERENCEFILE=$1
 FILEIN=$2
 
+if [ $BEDFILE != "" ]; then
+	BEDFILE=$(echo -XL $BEDFILE)
+fi
+
+
 ###Below uses GATK to do some analysis.
 DEDUPLIFIEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam dedup_XXX)
 METRICFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.txt metrics_XXX)
@@ -77,13 +86,6 @@ SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo -V {})
 RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
 
-# REALIGNERINTERVALPREFIX=${TMPDIR}/tmp_intervals_
-
-# INTERVALS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.intervals )
-# REALIGNEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.bam)
-# SORTEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}srt_{}.bam)
-# REALIGNEDMERGEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam realigned_XXX)
-
 
 $PICARD MarkDuplicates INPUT=$FILEIN OUTPUT=$DEDUPLIFIEDBAM METRICS_FILE=$METRICFILE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit 1
 
@@ -98,14 +100,14 @@ $PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
 $PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}
 $PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list')
-parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS || exit 1
+parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} ${BEDFILE} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS || exit 1
 java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS} -assumeSorted
 rm $SCATTEREDFIRSTCALLS
-java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --knownSites $JOINEDFIRSTCALLS -o $RECALDATATABLE || exit 1
+java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --knownSites $JOINEDFIRSTCALLS -o $RECALDATATABLE || exit 1
 rm $JOINEDFIRSTCALLS
 java -jar ${GATK} -T PrintReads -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM || exit 1
 rm $DEDUPLIFIEDBAM $RECALDATATABLE
-parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS || exit 1
+parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} ${BEDFILE} -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS || exit 1
 rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
 java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -assumeSorted --outputFile ${OUTFILE} ${CMDOUTCALLS}
 
