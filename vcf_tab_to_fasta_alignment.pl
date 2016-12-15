@@ -52,7 +52,7 @@ my %iupac = (
 			'C/T' => 'Y',
 			'T/C' => 'Y',
 
-			'./.' => '.',
+			'./.' => 'N',
 		);
 
 open (TAB, "<$input_tab")
