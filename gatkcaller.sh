@@ -70,11 +70,12 @@ SCATTEREDFIRSTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_first_calls_XXX)
 SUFFIXES=$(seq -f %02.0f 0 $((CORES-1)))
 SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR --suffix=.vcf first_calls_{}_XXXXXX)
 CMDFIRSTCALLS=$(echo $SCATTEREDFIRSTCALLS | tr ' ' '\n' | xargs -i echo -V {})
-JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf first_calls_XXX)
+JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf joined_first_calls_XXX)
 RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXX)
 SCATTEREDOUTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_output_calls_XXX)
 SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf out_call_{}_XXXXXX)
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo -V {})
+RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
 
 # REALIGNERINTERVALPREFIX=${TMPDIR}/tmp_intervals_
 
@@ -82,7 +83,7 @@ CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo -V {})
 # REALIGNEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}{}.bam)
 # SORTEDBAMS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i echo ${REALIGNERINTERVALPREFIX}srt_{}.bam)
 # REALIGNEDMERGEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam realigned_XXX)
-# RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
+
 
 $PICARD MarkDuplicates INPUT=$FILEIN OUTPUT=$DEDUPLIFIEDBAM METRICS_FILE=$METRICFILE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 || exit 1
 
