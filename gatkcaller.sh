@@ -65,7 +65,7 @@ DEDUPLIFIEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam dedup_XXX)
 METRICFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.txt metrics_XXX)
 REFERENCEDICT=${REFERENCEFILE%.*}.dict
 FULLINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.interval_list fullIntervals_XXX)
-SCATTEREDINTERVALDIR=$(mktemp --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
+SCATTEREDINTERVALDIR=$(mktemp -d --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
 SCATTEREDFIRSTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_first_calls_XXX)
 SUFFIXES=$(seq -f %02.0f 0 $((CORES-1)))
 SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR first_calls_{}_XXXXXX)
