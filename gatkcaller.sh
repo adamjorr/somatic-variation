@@ -98,7 +98,7 @@ $PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=
 $PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list')
 parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} -stand_call_conf 50 -stand_emit_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS || exit 1
-java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -out ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS} -assumeSorted
+java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS} -assumeSorted
 rm $SCATTEREDFIRSTCALLS
 java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --knownSites $JOINEDFIRSTCALLS -o $RECALDATATABLE || exit 1
 rm $JOINEDFIRSTCALLS
@@ -106,7 +106,7 @@ java -jar ${GATK} -T PrintReads -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFIL
 rm $DEDUPLIFIEDBAM $RECALDATATABLE
 parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS || exit 1
 rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
-java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -assumeSorted -out ${OUTFILE} ${CMDOUTCALLS}
+java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} -assumeSorted --outputFile ${OUTFILE} ${CMDOUTCALLS}
 
 rm -rf $TMPDIR
 
