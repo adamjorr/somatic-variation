@@ -192,7 +192,7 @@ sub basic_filter{
 				}
 			}
 		}
-		print print $vcf->format_line($record); #this site has passed filtering, print to output
+		print $vcf->format_line($record); #this site has passed filtering, print to output
 	}
 }
 
