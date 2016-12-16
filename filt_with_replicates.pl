@@ -1,4 +1,4 @@
-#!usr/bin/env perl
+#!/usr/bin/env perl
 #perl filt_with_replicates.pl [-s | --strict] [-g | --grouped int] <vcfile.vcf >filtered.vcf
 
 #Filters a VCF file by removing sites for a sample if all its replicates don't match.
@@ -69,7 +69,7 @@ my $cutoff = 1;
 
 GetOptions(	'strict|s' => \$strict,
 			'grouped|g=i' => \$grouped,
-			'majority|m' => \$majorityrule
+			'majority|m' => \$majorityrule,
 			'help|h|?' => \$help);
 pod2usage(1) if $help;
 
@@ -137,12 +137,12 @@ sub strict_filter{
 			my @rep = @{$replicates{$sample}}; #get the names of the replicates for the sample
 			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotypes of the replicates
 			my ($most_common_gt, $number) = most_common(@genotype);
-			my $ratio = ($number / $genotype)
+			my $ratio = ($number / scalar @genotype);
 			if ($ratio < $cutoff){ #if not all the genotypes match
 				$stop = 1; #stop
 				last; #don't consider other samples
 			}
-			elsif($ratio != 1){
+			elsif ($ratio != 1){
 				#if most common is sufficient, change all the genotypes to it.
 				for my $replicate (@rep){
 					my $index = $vcf -> get_column_index($replicate);
@@ -150,6 +150,7 @@ sub strict_filter{
 					@{$record}[$index] = $vcf->replace_field(@{$record}[$index],$most_common_gt,0,':');
 				}
 			}
+		}
 		next if $stop == 1; #skip this record if we've decided to stop
 		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
 	}
@@ -172,7 +173,7 @@ sub basic_filter{
 			my @rep = @{$replicates{$sample}}; #get the names of the replicates for the sample
 			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotype of each replicate
 			my ($most_common_gt, $number) = most_common(@genotype);
-			my $ratio = ($number / $genotype)
+			my $ratio = ($number / scalar @genotype);
 			if ($ratio < $cutoff) { #most common genotype is not enough to give majority OR all GTs don't match, depending on the option.
 				#change all the genotypes to ./.
 				for my $replicate (@rep){
@@ -181,7 +182,7 @@ sub basic_filter{
 					@{$record}[$index] = $vcf->replace_field(@{$record}[$index],'./.',0,':');
 				}
 			}
-			elsif($ratio != 1){
+			elsif ($ratio != 1){
 				#if most common is sufficient, change all the genotypes to it.
 				for my $replicate (@rep){
 					my $index = $vcf -> get_column_index($replicate);
