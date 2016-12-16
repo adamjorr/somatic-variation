@@ -65,6 +65,8 @@ my $strict = '';
 my $grouped = 0;
 my $majorityrule = '';
 my $help = 0;
+my $cutoff = 1;
+
 GetOptions(	'strict|s' => \$strict,
 			'grouped|g=i' => \$grouped,
 			'majority|m' => \$majorityrule
@@ -100,6 +102,9 @@ else{
 	}
 }
 
+if($majorityrule){
+	$cutoff = .5
+}
 
 if ($strict){
 	strict_filter()
@@ -121,28 +126,31 @@ exit;
 
 Applies strict filtering to the VCF. That is,
 only outputs lines from the VCF where every
-replicate of every sample has the same genotype
-and there is a sample which differs from the others.
+replicate of every sample has the same genotype.
 
 =cut
 
 sub strict_filter{
 	while (my $record = $vcf -> next_data_array()){ #iterate over data in the vcf
 		my $stop = 0;
-		my @allgts;
 		for my $sample (keys %replicates){ #iterate over each sample
-			my @rep = @{$replicates{$sample}}; #get the column numbers of the replicates for the sample
+			my @rep = @{$replicates{$sample}}; #get the names of the replicates for the sample
 			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotypes of the replicates
-			if (@genotype != grep{$_ eq $genotype[0]} @genotype){ #if not all the genotypes match
+			my ($most_common_gt, $number) = most_common(@genotype);
+			my $ratio = ($number / $genotype)
+			if ($ratio < $cutoff){ #if not all the genotypes match
 				$stop = 1; #stop
 				last; #don't consider other samples
 			}
-			#otherwise all GTs for this sample match
-			next if ($genotype[0] eq './.'); #skip this sample if all GTs are missing
-			push @allgts, @genotype;
-		}
+			elsif($ratio != 1){
+				#if most common is sufficient, change all the genotypes to it.
+				for my $replicate (@rep){
+					my $index = $vcf -> get_column_index($replicate);
+					my $field = @{$record}[$index];
+					@{$record}[$index] = $vcf->replace_field(@{$record}[$index],$most_common_gt,0,':');
+				}
+			}
 		next if $stop == 1; #skip this record if we've decided to stop
-		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #skip if there is no variation in GTs
 		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
 	}
 }
@@ -160,19 +168,43 @@ and there is a sample which differs from the others.
 
 sub basic_filter{
 	while (my $record = $vcf -> next_data_array()){ #iterate over data in the vcf
-		my @allgts;
 		for my $sample (keys %replicates){ #iterate over each sample
-			my @rep = @{$replicates{$sample}}; #get the column numbers of the replicates for the sample
+			my @rep = @{$replicates{$sample}}; #get the names of the replicates for the sample
 			my @genotype = map { (split(':',$vcf -> get_column($record, $_)))[0]} @rep; #get the genotype of each replicate
-			if (@genotype != grep{$_ eq $genotype[0]} @genotype){ #if there is some genotype that doesn't match all the others of this sample
-				map { @{$record}[$vcf -> get_column_index( $_ )] = './.:0,0:0.00' } @rep; #change all the genotypes to ./. and go to the next sample
-				next;
+			my ($most_common_gt, $number) = most_common(@genotype);
+			my $ratio = ($number / $genotype)
+			if ($ratio < $cutoff) { #most common genotype is not enough to give majority OR all GTs don't match, depending on the option.
+				#change all the genotypes to ./.
+				for my $replicate (@rep){
+					my $index = $vcf -> get_column_index($replicate);
+					my $field = @{$record}[$index];
+					@{$record}[$index] = $vcf->replace_field(@{$record}[$index],'./.',0,':');
+				}
 			}
-			#otherwise, all the genotypes match
-			next if ($genotype[0] eq './.'); #but skip this sample anyway if they are all missing GTs
-			push @allgts, @genotype;
+			elsif($ratio != 1){
+				#if most common is sufficient, change all the genotypes to it.
+				for my $replicate (@rep){
+					my $index = $vcf -> get_column_index($replicate);
+					my $field = @{$record}[$index];
+					@{$record}[$index] = $vcf->replace_field(@{$record}[$index],$most_common_gt,0,':');
+				}
+			}
 		}
-		next if @allgts == grep{$_ eq $allgts[0]} @allgts; #skip if there is no variation in GTs
 		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
 	}
 }
+
+sub most_common{
+	my @items = @_;
+	my %count;
+	$count{$_}++ for @items;
+	my ($common, $number) = each %count;
+	while(my ($potential, $potential_num) = each %count){
+		if ($potential_num > $number){
+			$common = $potential;
+			$number = $potential_num;
+		}
+	}
+	return ($common, $number)
+}
+
