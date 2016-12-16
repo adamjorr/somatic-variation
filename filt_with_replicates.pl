@@ -77,6 +77,7 @@ pod2usage(1) if $help;
 my $vcf = Vcf->new(fh=>\*STDIN);
 $vcf->parse_header();
 print $vcf -> format_header();
+$vcf->recalc_ac_an(1);
 
 my @samples = $vcf->get_samples();
 my %replicates;
@@ -152,7 +153,7 @@ sub strict_filter{
 			}
 		}
 		next if $stop == 1; #skip this record if we've decided to stop
-		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
+		print $vcf->format_line($record); #this site has passed filtering, print to output
 	}
 }
 
@@ -191,7 +192,7 @@ sub basic_filter{
 				}
 			}
 		}
-		print join("\t",@{$record}) . "\n"; #this site has passed filtering, print to output
+		print print $vcf->format_line($record); #this site has passed filtering, print to output
 	}
 }
 
