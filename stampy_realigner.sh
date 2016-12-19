@@ -72,7 +72,7 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	GROUPSAM=$(mktemp --tmpdir=$TMPDIR --suffix=.sam RG_${GROUP}_XXX)
 	GROUPBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam RG_${GROUP}_XXX)
 	BAMS=$(echo $BAMS $GROUPBAM) || exit 1
-    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} -o $GROUPSAM || exit 1
+    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} > $GROUPSAM || exit 1
     samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $GROUPBAM $GROUPSAM || exit 1
     rm $GROUPSAM || exit 1
 done
