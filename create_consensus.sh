@@ -51,7 +51,7 @@ REFFILE=$1
 BAMFILE=$2
 
 if [ "$BCFTOOLSFILE" == "" ]; then
-	BCFTOOLSFILE=$(mktemp --suffix=.vcf.gz bcftools_calls_XXXXXX)
+	BCFTOOLSFILE=$(mktemp --tmpdir --suffix=.vcf.gz bcftools_calls_XXXXXX)
 	BCFTMP=TRUE
 fi
 
