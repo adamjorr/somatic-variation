@@ -3,7 +3,7 @@
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
-USAGE="Usage: $0 [-t THREADS] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/"
 
 
 
@@ -15,12 +15,16 @@ FILE_PATTERN='*.fastq' #pattern to find first set of reads
 SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
 REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 REFERENCEFILE=""
+TMPOPTION=""
 OUTNAME=""
 
 while getopts :t:p:r:1:2:o:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
+			;;
+		d)
+			TMPOPTION=$OPTARG
 			;;
 		p)
 			RGPL=$OPTARG
@@ -73,6 +77,8 @@ if [ "$OUTNAME" == "" ]; then
 	exit 1
 fi
 
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
+
 #Some variables
 DATADIR=$1
 FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*") || exit
@@ -100,7 +106,7 @@ for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F) || exit 1
 	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit 1
 	SECONDBASE=$(basename $SECONDMATE) || exit 1
-	BAMOUT=$(mktemp --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
+	BAMOUT=$(mktemp --tmpdir=$TMPDIR --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
 	BAMS=$(echo $BAMS $BAMOUT) || exit 1
 	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
 	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
@@ -113,6 +119,6 @@ echo Merging . . . >&2
 samtools merge -@ $CORES $OUTNAME $BAMS || exit 1
 
 #Now clean up
-rm $BAMS || exit
+rm -rf $TMPDIR || exit
 
 exit 0
