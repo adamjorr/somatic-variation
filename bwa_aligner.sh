@@ -61,13 +61,13 @@ if [ $# -ne 1 ]; then			#if we forget arguments
 	exit 1				#and exit with error
 fi
 
-if [ $REFERENCEFILE == "" ]; then
+if [ "$REFERENCEFILE" == "" ]; then
 	echo $USAGE
 	echo "Reference file required."
 	exit 1
 fi
 
-if [ $OUTNAME == "" ]; then
+if [ "$OUTNAME" == "" ]; then
 	echo $USAGE
 	echo "Output file name required."
 	exit 1

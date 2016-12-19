@@ -50,7 +50,7 @@ fi
 REFFILE=$1
 BAMFILE=$2
 
-if [ $BCFTOOLSFILE == "" ]; then
+if [ "$BCFTOOLSFILE" == "" ]; then
 	BCFTOOLSFILE=$(mktemp --suffix=.vcf.gz bcftools_calls_XXXXXX)
 	BCFTMP=TRUE
 fi

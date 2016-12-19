@@ -45,7 +45,7 @@ REFERENCEFILE=$1
 DATAFILE=$2
 OUTFILE=$3
 
-if [ $TMPDIR == "" ]; then
+if [ "$TMPDIR" == "" ]; then
 	TMPDIR=$(mktemp -d --tmpdir stampy_realigner_tmp_XXXXXX)
 	DELTMPDIR=TRUE
 fi

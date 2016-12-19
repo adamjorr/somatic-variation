@@ -64,7 +64,7 @@ TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
 REFERENCEFILE=$1
 FILEIN=$2
 
-if [ $BEDFILE != "" ]; then
+if [ "$BEDFILE" != "" ]; then
 	BEDFILE=$(echo -XL $BEDFILE)
 fi
 
