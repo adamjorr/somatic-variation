@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #bash clean_reads.sh -t THREADS -d DEST_DIRECTORY -k KMER_SIZE -f FILE_PATTERN -s SEARCH_STRING -r REPLACE_STRING [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY 
-USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 SEARCH_STRING] [-2 REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY"
+USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 SEARCH_STRING] [-2 REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY/"
 
 RCORRECTOR="perl run_rcorrector.pl"
 LOAD_COUNTING="scripts/load-into-counting.py"
@@ -13,40 +13,36 @@ SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
 REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 MAX_MEMORY=64e9 #max memory to be given to khmer
 COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
+READ_DIRECTORY=""
 
-while getopts :t:d:k:f:s:r:m:c:h opt; do
+while getopts :t:d:k:f:s:r:m:c:i:h opt; do
 	case $opt in
 		t)
-			echo "t was set to $OPTARG" >&2
 			THREADS=$OPTARG
 			;;
 		d)
-			echo "d was set to $OPTARG" >&2
 			DEST_DIRECTORY=$OPTARG
 			;;
 		k)
-			echo "k was set to $OPTARG" >&2
 			KMER_SIZE=$OPTARG
 			;;
 		f)
-			echo "f was set to $OPTARG" >&2
 			FILE_PATTERN=$OPTARG
 			;;
 		1)
-			echo "1 was set to $OPTARG" >&2
 			SEARCH_STRING=$OPTARG
 			;;
 		2)
-			echo "2 was set to $OPTARG" >&2
 			REPLACE_STRING=$OPTARG
 			;;
 		m)
-			echo "m was set to $OPTARG" >&2
 			MAX_MEMORY=$OPTARG
 			;;
 		c)
-			echo "c was set to $OPTARG" >&2
 			COVERAGE=$OPTARG
+			;;
+		i)
+			READ_DIRECTORY=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -65,17 +61,23 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -ne 1 ]; then
+if [ $# -ne 0 ]; then
 	echo $USAGE >&2
 	exit 1
 fi
 
-if [ ! -d $1 ] ; then
-	echo "Invalid argument '$1': Not a directory or unreadable."
+if [ "$READ_DIRECTORY" == "" ]; then
+	echo $USAGE >&2
+	echo "Input directory required." >&2
 	exit 1
 fi
 
-READ_DIRECTORY=$1
+if [ ! -d $READ_DIRECTORY ] ; then
+	echo $USAGE >&2
+	echo "Invalid argument ${READ_DIRECTORY}: Not a directory or unreadable." >&2
+	exit 1
+fi
+
 mkdir -p $DEST_DIRECTORY
 mkdir -p ${DEST_DIRECTORY}/corrected
 mkdir -p ${DEST_DIRECTORY}/sliced

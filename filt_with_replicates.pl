@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-#perl filt_with_replicates.pl [-s | --strict] [-g | --grouped int] <vcfile.vcf >filtered.vcf
+#perl filt_with_replicates.pl [-s | --strict] [-m | --majority] [-g | --grouped int] <vcfile.vcf >filtered.vcf
 
 #Filters a VCF file by removing sites for a sample if all its replicates don't match.
 #Using -s will remove the site for all samples if one of its samples' replicates don't match.

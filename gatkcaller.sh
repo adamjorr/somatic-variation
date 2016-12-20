@@ -15,8 +15,10 @@ TMPOPTION=""
 OUTFILE=/dev/stdout
 NUMNS=30
 BEDFILE=""
+REFERENCEFILE=""
+FILEIN=""
 
-while getopts :t:p:g:d:b:o:h opt; do
+while getopts :t:p:g:d:b:o:r:i:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -36,12 +38,19 @@ while getopts :t:p:g:d:b:o:h opt; do
 		o)
 			OUTFILE=$OPTARG
 			;;
+		r)
+			REFERENCEFILE=$OPTARG
+			;;
+		i)
+			FILEIN=$OPTARG
+			;;
 		h)
 			echo $USAGE >&2
 			exit 1
 			;;
 	    \?)
 			echo "Invalid option: -$OPTARG" >&2
+			echo $USAGE >&2
 			exit 1
 			;;
 		:)
@@ -53,16 +62,25 @@ done
 
 shift $((OPTIND-1))
 
-if [ $# -ne 2 ]; then			#if we forget arguments
-	echo $USAGE	#remind us
+if [ $# -ne 0 ]; then			#if we forget arguments
+	echo $USAGE >&2	#remind us
 	exit 1				#and exit with error
 fi
 
-TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
+if [ "$REFERENCEFILE" == "" ]; then
+	echo $USAGE >&2
+	echo "Reference file required." >&2
+	exit 1
+fi
 
-#Some variables
-REFERENCEFILE=$1
-FILEIN=$2
+if [ "FILEIN" == "" ]; then
+	echo $USAGE >&2
+	echo "Input file required." >&2
+	exit 1
+fi
+
+
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
 
 if [ "$BEDFILE" != "" ]; then
 	BEDFILE=$(echo -XL $BEDFILE)

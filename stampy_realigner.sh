@@ -4,13 +4,16 @@
 #Takes reference and realigns reads that are not in a proper pair
 #or have quality lower than -q (default: 13) in the data.bam file.
 
-USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] [-o out.bam] -r reference.fasta -i data.bam"
 
 CORES=48
 TMPOPTION=""
 QUAL=13
+REFERENCEFILE=""
+DATAFILE=""
+OUTFILE=/dev/stdout
 
-while getopts :t:d:q:h opt; do
+while getopts :t:d:q:r:i:o:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -21,12 +24,21 @@ while getopts :t:d:q:h opt; do
 		q)
 			QUAL=$OPTARG
 			;;
+		r)
+			REFERENCEFILE=$OPTARG
+			;;
+		i)
+			DATAFILE=$OPTARG
+			;;
+		o)
+			OUTFILE=$OPTARG
+			;;
 		h)
 			echo $USAGE >&2
 			exit 1
 			;;
 	    \?)
-			echo "Invalid option: -$OPTARG ; use -h for help." >&2
+			echo "Invalid option: -$OPTARG . Use -h for help." >&2
 			exit 1
 			;;
 		:)
@@ -37,13 +49,27 @@ while getopts :t:d:q:h opt; do
 done
 
 shift $((OPTIND-1)) # get operands
-if [ $# -ne 3 ]; then			#if we forget arguments
-	echo $USAGE	#remind us
+if [ $# -ne 0 ]; then			#if we forget arguments
+	echo $USAGE	>&2 #remind us
 	exit 1				#and exit with error
 fi
-REFERENCEFILE=$1
-DATAFILE=$2
-OUTFILE=$3
+
+if [ "$REFERENCEFILE" == "" ]; then
+	echo $USAGE >&2
+	echo "Reference file required." >&2
+	exit 1
+fi
+
+if [ "$DATAFILE" == "" ]; then
+	echo $USAGE >&2
+	echo "Input file required." >&2
+	exit 1
+fi
+
+if [ ! -e "$DATAFILE" ]; then
+	echo "$DATAFILE does not exist." >&2
+	exit 1
+fi
 
 TMPDIR=$(mktemp -d --tmpdir=${TMPOPTION} stampy_realigner_tmp_XXXXXX)
 SORTEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam sorted_in_XXX)

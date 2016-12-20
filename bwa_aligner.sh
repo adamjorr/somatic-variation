@@ -3,7 +3,7 @@
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
-USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/"
 
 
 
@@ -16,9 +16,10 @@ SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
 REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 REFERENCEFILE=""
 TMPOPTION=""
-OUTNAME=""
+DATADIR=""
+OUTNAME=/dev/stdout
 
-while getopts :t:p:r:1:2:o:q:h opt; do
+while getopts :t:p:r:1:2:o:i:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -41,6 +42,9 @@ while getopts :t:p:r:1:2:o:q:h opt; do
 		o)
 			OUTNAME=$OPTARG
 			;;
+		i)
+			DATADIR=$OPTARG
+			;;
 		q)
 			FILE_PATTERN=$OPTARG
 			;;
@@ -60,27 +64,32 @@ while getopts :t:p:r:1:2:o:q:h opt; do
 done
 
 shift $((OPTIND-1)) # get operands
-if [ $# -ne 1 ]; then			#if we forget arguments
-	echo $USAGE	#remind us
+if [ $# -ne 0 ]; then			#if we forget arguments
+	echo $USAGE	>&2#remind us
 	exit 1				#and exit with error
 fi
 
 if [ "$REFERENCEFILE" == "" ]; then
-	echo $USAGE
-	echo "Reference file required."
+	echo $USAGE >&2
+	echo "Reference file required." >&2
 	exit 1
 fi
 
-if [ "$OUTNAME" == "" ]; then
-	echo $USAGE
-	echo "Output file name required."
+if [ "$DATADIR" == "" ]; then
+	echo $USAGE >&2
+	echo "Input directory required." >&2
+	exit 1
+fi
+
+if [ ! -d "$DATADIR"]; then
+	echo $USAGE >&2
+	echo "$DATADIR is not a directory." >&2
 	exit 1
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
 
 #Some variables
-DATADIR=$1
 FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*") || exit
 
 if [ "$FASTQFILES" == '' ]; then
