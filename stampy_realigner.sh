@@ -77,7 +77,6 @@ FIXEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam fixed_in_XXX)
 MAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam mapped_XXX)
 UNMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam unmapped_XXX)
 
-
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
 	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
 fi
@@ -93,33 +92,29 @@ rm $SORTEDINFILE || exit 1
 samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE || exit 1
 rm $FIXEDINFILE || exit 1
 
+
+
 for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	echo $GROUP >&2
 	SANITARYGROUP=${GROUP//:/}
 	SANITARYGROUP=${SANITARYGROUP//\//}
 	SANITARYGROUP=${SANITARYGROUP//./}
 	SANITARYGROUP=${SANITARYGROUP//\\/}
-	GROUPSAM=$(mktemp --tmpdir=$TMPDIR --suffix=.sam RG_${SANITARYGROUP}_XXX)
-	GROUPBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam RG_${SANITARYGROUP}_XXX)
-	BAMS=$(echo $BAMS $GROUPBAM) || exit 1
-    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} > $GROUPSAM || exit 1
-    samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $GROUPBAM $GROUPSAM || exit 1
-    rm $GROUPSAM || exit 1
+	GROUPFIFO=$(mktemp --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
+	mkfifo $GROUPFIFO
+	FIFOS=$(echo $FIFOS $GROUPFIFO) || exit 1
+    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} |
+    samtools view -@ ${CORES} -h -b -u | $GROUPFIFO
 done
 
 echo SAMTOOLS POSTPROCESSING >&2
-
 MERGEDBAMS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam merged_XXXXXX)
 JOINEDMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam joined_mapped_XXXXXX)
 
 
 rm $UNMAPPEDREADS || exit 1
-samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $BAMS || exit 1
-rm $BAMS || exit 1
-samtools merge -@ ${CORES} -n -c -p $JOINEDMAPPEDREADS $MERGEDBAMS $MAPPEDREADS || exit 1
-rm $MERGEDBAMS $MAPPEDREADS || exit 1
-samtools sort -@ ${CORES} -m 2G -o ${OUTFILE} -O bam -T ${TMPDIR}/ $JOINEDMAPPEDREADS || exit 1
-rm $JOINEDMAPPEDREADS || exit 1
+samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS || exit 1
+samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS || exit 1
 
 rm -rf $TMPDIR
 
