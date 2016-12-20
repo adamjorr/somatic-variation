@@ -8,6 +8,7 @@ THREADS=4
 INFILE=""
 OUTFILE=""
 GROUPBY=""
+trap "exit 1" ERR
 
 while getopts t:g:i:o:h opt; do
 	case $opt in
@@ -58,23 +59,23 @@ if [ "$OUTFILE" == "" ]; then
 	exit 1
 fi
 
-mkdir -p vcf_processing || exit 1
-cd vcf_processing || exit 1
+mkdir -p vcf_processing
+cd vcf_processing
 
-perl filt_with_replicates.pl -s -g $GROUPBY <$INFILE >filtered.vcf || exit 1
-vcf-to-tab <filtered.vcf >filtered.tab || exit 1
-perl vcf_tab_to_fasta_alignment.pl -i filtered.tab > cleaned.fasta || exit 1
-rm filtered.tab_clean || exit 1
-python2 diploidify.py -i cleaned.fasta -t fasta -o cleaned.dip.phylip-relaxed -p phylip-relaxed -v || exit 1
+perl filt_with_replicates.pl -s -g $GROUPBY <$INFILE >filtered.vcf
+vcf-to-tab <filtered.vcf >filtered.tab
+perl vcf_tab_to_fasta_alignment.pl -i filtered.tab > cleaned.fasta
+rm filtered.tab_clean
+python2 diploidify.py -i cleaned.fasta -t fasta -o cleaned.dip.phylip-relaxed -p phylip-relaxed -v
 
-mkdir -p tree || exit 1
-cd tree || exit 1
+mkdir -p tree
+cd tree
 
-raxmlHPC -T $THREADS -f a -s ../cleaned.dip.phylip-relaxed -n nwk -m ASC_GTRGAMMA --asc-corr=lewis -p 12345 -x 12345 -# 100 || exit 1
+raxmlHPC -T $THREADS -f a -s ../cleaned.dip.phylip-relaxed -n nwk -m ASC_GTRGAMMA --asc-corr=lewis -p 12345 -x 12345 -# 100
 
 cd ..
 
-Rscript plot_tree.R tree/RAxML_bestTree.nwk $OUTFILE || exit 1
+Rscript plot_tree.R tree/RAxML_bestTree.nwk $OUTFILE
 
 cd ..
 

@@ -3,7 +3,7 @@
 #Script to replicate the Eucalyptus experiment. Takes the location of the directory containing the raw reads as an argument.
 
 READ_DIR = $1
-
+trap "exit 1" ERR
 #clean reads
 bash clean_reads.sh $READ_DIR
 

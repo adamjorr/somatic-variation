@@ -118,7 +118,5 @@ rm $UNMAPPEDREADS
 samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS
 samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS
 
-rm -rf $TMPDIR
-
 exit 0
 

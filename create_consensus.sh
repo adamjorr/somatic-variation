@@ -72,6 +72,8 @@ if [ "$REFFILE" == "" ]; then
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
+trap "rm -rf $TMPDIR" EXIT
+trap "exit 1" ERR
 
 if [ "$BCFTOOLSFILE" == "" ]; then
 	BCFTOOLSFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf.gz bcftools_calls_XXXXXX)
@@ -81,6 +83,4 @@ samtools mpileup -uf $REFFILE $BAMFILE | bcftools call --threads $CORES -mv -Ou 
 tabix $BCFTOOLSFILE
 cat $REFFILE | bcftools consensus $BCFTOOLSFILE -c $CHAINFILE > $OUTPUT
 
-rm -rf $TMPDIR
-
-exit
+exit 0

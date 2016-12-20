@@ -88,9 +88,12 @@ if [ ! -d "$DATADIR"]; then
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
+trap "rm -rf $TMPDIR" EXIT
+trap "exit 1" ERR
+
 
 #Some variables
-FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*") || exit
+FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*")
 
 if [ "$FASTQFILES" == '' ]; then
 	echo "Searching for files that match $FILE_PATTERN and ${SEARCH_STRING} in $DATADIR failed" >&2
@@ -112,22 +115,19 @@ PROGRESS=0
 for F in $FASTQFILES; do
 	((PROGRESS++))
 	echo Progress: $PROGRESS / $NUMFILES >&2
-	BASEFNAME=$(basename $F) || exit 1
-	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit 1
-	SECONDBASE=$(basename $SECONDMATE) || exit 1
+	BASEFNAME=$(basename $F)
+	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING}
+	SECONDBASE=$(basename $SECONDMATE)
 	BAMOUT=$(mktemp --tmpdir=$TMPDIR --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
-	BAMS=$(echo $BAMS $BAMOUT) || exit 1
-	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
-	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
-	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
+	BAMS=$(echo $BAMS $BAMOUT)
+	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
+	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
+	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
 	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
-		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp || exit 1
+		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp
 done
 
 echo Merging . . . >&2
-samtools merge -@ $CORES $OUTNAME $BAMS || exit 1
-
-#Now clean up
-rm -rf $TMPDIR || exit
+samtools merge -@ $CORES $OUTNAME $BAMS
 
 exit 0
