@@ -78,7 +78,7 @@ if [ ! -d $READ_DIRECTORY ] ; then
 	exit 1
 fi
 
-trap "rm -rf $TMPDIR" EXIT
+trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 trap "exit 1" ERR
 
 mkdir -p $DEST_DIRECTORY

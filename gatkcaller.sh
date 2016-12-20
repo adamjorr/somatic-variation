@@ -82,7 +82,7 @@ fi
 
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
-trap "rm -rf $TMPDIR" EXIT
+trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 
 if [ "$BEDFILE" != "" ]; then
 	BEDFILE=$(echo -XL $BEDFILE)

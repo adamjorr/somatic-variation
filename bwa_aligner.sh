@@ -88,7 +88,7 @@ if [ ! -d "$DATADIR"]; then
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
-trap "rm -rf $TMPDIR" EXIT
+trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 trap "exit 1" ERR
 
 
