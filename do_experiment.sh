@@ -30,7 +30,7 @@ cd ..
 
 #call variants
 bash bwa_aligner.sh -r e_mel_3/e_mel_3.fa -o alignment.bam -i $READ_DIR #align the raw reads to our new pseudo-reference
-bash gatkcaller.sh -r e_mel_3/e_mel_3.fa -i alignment.bam #use GATK to call variants. we use unfiltered reads so we don't mess up assumptions made by GATK.
+bash gatkcaller.sh -o var-calls.vcf -r e_mel_3/e_mel_3.fa -i alignment.bam #use GATK to call variants. we use unfiltered reads so we don't mess up assumptions made by GATK.
 #outputs var-calls.vcf, the variant calls
 
 #filter variants and make tree
