@@ -5,7 +5,7 @@
 #requires samtools, picard-tools, the GATK, and bowtie2
 
 #http://tldp.org/LDP/abs/html/string-manipulation.html is a great guide for manipulating strings in bash
-USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-b BEDFILE] [-o OUTFILE] reference.fasta data.bam"
+USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-b BEDFILE] [-o OUTFILE] -r reference.fasta -i data.bam"
 
 #Here are some things you might want to change:
 PICARD="picard" #How do I call picard on this system?
