@@ -104,7 +104,7 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	SANITARYGROUP=${SANITARYGROUP//\//}
 	SANITARYGROUP=${SANITARYGROUP//./}
 	SANITARYGROUP=${SANITARYGROUP//\\/}
-	GROUPFIFO=$(mktemp --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
+	GROUPFIFO=$(mktemp -u --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
 	mkfifo $GROUPFIFO
 	FIFOS=$(echo $FIFOS $GROUPFIFO)
     stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} |
