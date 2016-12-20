@@ -77,20 +77,24 @@ FIXEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam fixed_in_XXX)
 MAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam mapped_XXX)
 UNMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam unmapped_XXX)
 
+trap "rm -rf $TMPDIR" EXIT
+trap "exit 1" ERR
+
+
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
-	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE} || exit 1
+	stampy -G ${REFERENCEFILE%.*} ${REFERENCEFILE}
 fi
 
 if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
-	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*} || exit 1
+	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*}
 fi
 
 echo SAMTOOLS PREPROCESSING >&2
-samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $SORTEDINFILE $DATAFILE || exit 1
-samtools fixmate $SORTEDINFILE $FIXEDINFILE || exit 1
-rm $SORTEDINFILE || exit 1
-samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE || exit 1
-rm $FIXEDINFILE || exit 1
+samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $SORTEDINFILE $DATAFILE
+samtools fixmate $SORTEDINFILE $FIXEDINFILE
+rm $SORTEDINFILE
+samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE
+rm $FIXEDINFILE
 
 
 
@@ -102,19 +106,17 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	SANITARYGROUP=${SANITARYGROUP//\\/}
 	GROUPFIFO=$(mktemp --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
 	mkfifo $GROUPFIFO
-	FIFOS=$(echo $FIFOS $GROUPFIFO) || exit 1
+	FIFOS=$(echo $FIFOS $GROUPFIFO)
     stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} |
     samtools view -@ ${CORES} -h -b -u | $GROUPFIFO
 done
 
-echo SAMTOOLS POSTPROCESSING >&2
 MERGEDBAMS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam merged_XXXXXX)
 JOINEDMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam joined_mapped_XXXXXX)
 
-
-rm $UNMAPPEDREADS || exit 1
-samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS || exit 1
-samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS || exit 1
+rm $UNMAPPEDREADS
+samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS
+samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS
 
 rm -rf $TMPDIR
 
