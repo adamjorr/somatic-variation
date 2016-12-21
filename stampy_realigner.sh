@@ -77,7 +77,7 @@ FIXEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam fixed_in_XXX)
 MAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam mapped_XXX)
 UNMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam unmapped_XXX)
 
-trap "rm -rf $TMPDIR" EXIT INT TERM HUP
+trap "killall; rm -rf $TMPDIR" EXIT INT TERM HUP
 trap "exit 1" ERR
 
 
