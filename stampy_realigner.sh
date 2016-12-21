@@ -111,7 +111,7 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
     samtools sort -@ ${CORES} -T ${TMPDIR}/ -m 2G -n -O bam > $GROUPFIFO &
 done
 
-samtools merge -@ ${CORES} -n -c -p $OUTFILE $FIFOS $MAPPEDREADS
+samtools merge -@ ${CORES} -n -c -p $OUTFILE $MAPPEDREADS $FIFOS
 
 exit 0
 
