@@ -111,11 +111,10 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
     samtools view -@ ${CORES} -h -b -u > $GROUPFIFO &
 done
 
-MERGEDBAMS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam merged_XXXXXX)
-JOINEDMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam joined_mapped_XXXXXX)
+MERGEDBAMS=$(mktemp -u --tmpdir=$TMPDIR --suffix=.bam merged_XXXXXX)
 
-rm $UNMAPPEDREADS
 samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS
+rm $UNMAPPEDREADS
 samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS
 
 exit 0
