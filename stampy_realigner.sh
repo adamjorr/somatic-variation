@@ -93,7 +93,7 @@ echo SAMTOOLS PREPROCESSING >&2
 samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $SORTEDINFILE $DATAFILE
 samtools fixmate $SORTEDINFILE $FIXEDINFILE
 rm $SORTEDINFILE
-samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -f 4 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE
+samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -F 4 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE
 rm $FIXEDINFILE
 
 
