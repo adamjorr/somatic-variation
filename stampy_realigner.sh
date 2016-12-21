@@ -108,14 +108,10 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	mkfifo $GROUPFIFO
 	FIFOS=$(echo $FIFOS $GROUPFIFO)
     stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} |
-    samtools view -@ ${CORES} -h -b -u > $GROUPFIFO &
+    samtools sort -@ ${CORES} -T ${TMPDIR}/ -m 2G -n -O bam > $GROUPFIFO &
 done
 
-MERGEDBAMS=$(mktemp -u --tmpdir=$TMPDIR --suffix=.bam merged_XXXXXX)
-
-samtools merge -@ ${CORES} -n -c -p $MERGEDBAMS $FIFOS
-rm $UNMAPPEDREADS
-samtools merge -@ ${CORES} -n -c -p $OUTFILE $MERGEDBAMS $MAPPEDREADS
+samtools merge -@ ${CORES} -n -c -p $OUTFILE $FIFOS $MAPPEDREADS
 
 exit 0
 
