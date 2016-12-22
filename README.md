@@ -157,12 +157,12 @@ do_experiment.sh folder_containing_reads/
 Script Documentation
 ====================
 ##clean_reads.sh
-Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
+Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
 
  * **-t:** number of threads to use [48]
  * **-d:** directory to put output in [./cleaned_reads]
  * **-k:** size of kmer to use [32]
- * **-f:** pattern matched to find reads ['*.fastq']
+ * **-f:** pattern matched to find reads [.fastq]
  * **-1:** pattern to find first mate in pair [R1]
  * **-2:** pattern to find second mate in pair [R2]
  * **-m:** max memory to give to khmer [64e9]
