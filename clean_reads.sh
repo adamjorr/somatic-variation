@@ -86,7 +86,7 @@ mkdir -p ${DEST_DIRECTORY}/corrected
 mkdir -p ${DEST_DIRECTORY}/sliced
 
 # Run Rcorrector with the script included in the program:
-for F in $(find $DEST_DIRECTORY -name $FILE_PATTERN -and -name '*$SEARCH_STRING*'); do
+for F in $(find $READ_DIRECTORY -name $FILE_PATTERN -and -name '*$SEARCH_STRING*'); do
 	$RCORRECTOR -1 $F -2 ${F/$SEARCH_STRING/$REPLACE_STRING} -k $KMER_SIZE -t $THREADS -od ${DEST_DIRECTORY}/corrected/
 done
 
