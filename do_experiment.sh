@@ -34,7 +34,8 @@ bash gatkcaller.sh -o var-calls.vcf -r e_mel_3/e_mel_3.fa -i alignment.bam #use 
 #outputs var-calls.vcf, the variant calls
 
 #filter variants and make tree
-bash vcf2tree.sh -t 12 -g 3 -i var-calls.vcf -o tree.pdf #the fasta alignment of the SNPs is called cleaned.fasta
+bash vcf2tree.sh -t 12 -g 3 -i var-calls.vcf -o tree.nwk #the fasta alignment of the SNPs is called cleaned.fasta
+Rscript plot_tree.R tree.nwk tree.pdf
 
 
 
