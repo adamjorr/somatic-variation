@@ -4,11 +4,10 @@
 #Takes reference and realigns reads that are not in a proper pair
 #or have quality lower than -q (default: 13) in the data.bam file.
 
-USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-q QUAL] [-o out.bam] -r reference.fasta -i data.bam"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-o out.bam] -r reference.fasta -i data.bam"
 
 CORES=48
 TMPOPTION=""
-QUAL=13
 REFERENCEFILE=""
 DATAFILE=""
 OUTFILE=/dev/stdout
@@ -20,9 +19,6 @@ while getopts :t:d:q:r:i:o:h opt; do
 			;;
 		d)
 			TMPOPTION=$OPTARG
-			;;
-		q)
-			QUAL=$OPTARG
 			;;
 		r)
 			REFERENCEFILE=$OPTARG
@@ -72,11 +68,6 @@ if [ ! -e "$DATAFILE" ]; then
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=${TMPOPTION} stampy_realigner_tmp_XXXXXX)
-SORTEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam sorted_in_XXX)
-FIXEDINFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.bam fixed_in_XXX)
-MAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam mapped_XXX)
-UNMAPPEDREADS=$(mktemp --tmpdir=$TMPDIR --suffix=.bam unmapped_XXX)
-
 trap '[ -n "$(jobs -pr)" ] && kill $(jobs -pr); rm -rf $TMPDIR' EXIT INT TERM HUP
 trap "exit 1" ERR
 
@@ -89,16 +80,7 @@ if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
 	stampy -g ${REFERENCEFILE%.*} -H ${REFERENCEFILE%.*}
 fi
 
-echo SAMTOOLS PREPROCESSING >&2
-samtools sort -@ ${CORES} -n -m 2G -T ${TMPDIR}/ -o $SORTEDINFILE $DATAFILE
-samtools fixmate $SORTEDINFILE $FIXEDINFILE
-rm $SORTEDINFILE
-samtools view -@ ${CORES} -b -h -q ${QUAL} -f 2 -F 4 -o $MAPPEDREADS -U $UNMAPPEDREADS $FIXEDINFILE
-rm $FIXEDINFILE
-
-
-
-for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
+for GROUP in $(samtools view -H $DATAFILE | grep ^@RG | cut -f2); do
 	echo $GROUP >&2
 	SANITARYGROUP=${GROUP//:/}
 	SANITARYGROUP=${SANITARYGROUP//\//}
@@ -107,11 +89,11 @@ for GROUP in $(samtools view -H $UNMAPPEDREADS | grep ^@RG | cut -f2); do
 	GROUPFIFO=$(mktemp -u --suffix=.bam --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
 	mkfifo $GROUPFIFO
 	FIFOS=$(echo $FIFOS $GROUPFIFO)
-    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} -M $UNMAPPEDREADS --bamsortmemory=2000000000 --readgroup=${GROUP} |
-    samtools sort -@ ${CORES} -T ${TMPDIR}/ -m 2G -n -O bam > $GROUPFIFO &
+    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} --bamkeepgoodreads -M $DATAFILE --bamsortmemory=2000000000 --readgroup=${GROUP} |
+    samtools sort -@ ${CORES} -l 0 -T ${TMPDIR}/ -m 2G -O bam > $GROUPFIFO &
 done
 
-samtools merge -@ ${CORES} -n -c -p $OUTFILE $MAPPEDREADS $FIFOS
+samtools merge -@ ${CORES} -c -p $OUTFILE $FIFOS
 
 exit 0
 
