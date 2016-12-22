@@ -1,11 +1,10 @@
 #!usr/bin/bash
 
-USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-f FILTER] [-c CHAINFILE] [-b BCFTOOLSFILE] [-o OUTPUT] -r reference.fasta -i in.bam"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-f FILTER] [-c CHAINFILE] [-b BCFTOOLSFILE] -o OUTPUT -r reference.fasta -i in.bam"
 
 CORES=48
 FILTER='AC==1'
-OUTPUT=consensus.fa
-CHAINFILE=$(basename ${OUTPUT}.chain)
+OUTPUT=""
 BCFTOOLSFILE=""
 BAMFILE=""
 REFFILE=""
@@ -63,6 +62,16 @@ if [ "$BAMFILE" == "" ]; then
 	echo $USAGE >&2
 	echo "Input file required."
 	exit 1
+fi
+
+if [ "$OUTPUT" == "" ]; then
+	echo $USAGE >&2
+	echo "Output file required."
+	exit 1
+fi
+
+if [ "$CHAINFILE" == "" ]; then
+	CHAINFILE=$(basename ${OUTPUT}.chain)
 fi
 
 if [ "$REFFILE" == "" ]; then
