@@ -14,7 +14,7 @@ Software Requirements
  6. Stampy version 1.0.30 or later.
  7. Bcftools version 1.3.1 or later
  8. HTSlib version 1.3.1 or later
- 9. GATK version TODO or later
+ 9. GATK version 3.7 or later
 
 Software Installation
 ---------------------
@@ -58,6 +58,10 @@ Stampy requires the user to register before downloading the software. Visit [thi
 make
 ```
 
+###GATK
+The GATK also requires registration before downloading the software. Visit [this link](https://software.broadinstitute.org/gatk/download/) and follow the instructions. Once you have accepted the license and downloaded the software archive, extract it and put the .jar file somewhere on your path.
+
+
 Input File Requirements
 -----------------------
 For creation of a psuedo-reference:
@@ -80,35 +84,68 @@ Creating A Reference From a Similar Species with Iterative Mapping
 
 Do kmer correction with:
 ```bash
-bash clean_reads.sh ../data/
+bash clean_reads.sh -i ../data/
 ```
 
 Then align to a reference with bwa:
 ```bash
-bash bwa_aligner.sh -r ref.fa -o bwa1.bam ./cleaned_reads/sliced/
+bash bwa_aligner.sh -r ref.fa -o bwa1.bam -i ./cleaned_reads/sliced/
 ```
 
 Next, realign with Stampy:
 ```bash
-bash stampy_realigner.sh ref.fa bwa1.bam stampy1.bam
+bash stampy_realigner.sh -r ref.fa -i bwa1.bam -o stampy1.bam
 ```
 
 Now obtain a consensus with:
 ```bash
-bash create_consensus.sh -o consensus.fa ref.fa stampy1.bam
+bash create_consensus.sh -o consensus.fa -r ref.fa -i stampy1.bam
 ```
 
-This process can be repeated, using the new consensus as a reference.
+This process can be repeated, using the new consensus as a reference to converge on a reference specific to the individual sequenced.
 
 Calling Somatic Variants 
 ------------------------
-TODO
-
 Variant calling can be performed using your favorite software. We provide a script that works with short Illumina reads and uses the GATK HaplotypeCaller to call variants.
+
+To call variants:
+```bash
+bash gatkcaller.sh -r reference.fa -i data.bam -o variants.vcf
+```
 
 Filtering Results
 ------------------
-TODO
+To filter our VCF using any replication information, use `filt_with_replicates.pl`.
+
+```bash
+perl filt_with_replicates.pl <variants.vcf >filtered.vcf
+```
+
+Building A Tree
+---------------
+
+To turn this vcf into a FASTA file of all the variable sites, use `vcf2fa.sh`.
+```bash
+bash vcf2fa.sh <filtered.vcf >filtered.fa
+```
+
+To turn this FASTA file where each diploid genotype is one site into a FASTA file where each genotype is represented as 2 sites, use `diploidify.py`.
+```bash
+python2 diploidify.py <filtered.fa >doubled.fa
+```
+
+Now you can use your favorite program to create a tree using this FASTA file.
+
+The filtering and tree construction can be simplified to one step if you have RAxML installed by using the `vcf2tree.sh` script.
+```bash
+bash vcf2tree.sh -i variants.vcf -o tree.nwk -g 3
+```
+
+We provide a simple R script to plot the tree and save it as a PDF. There are many tools that can visualize newick trees. This one will plot and label the tips using the first string of numbers that appears in its name.
+
+```bash
+Rscript plot_tree.R tree.nwk out.pdf
+```
 
 
 Experimental Replication
@@ -120,7 +157,7 @@ do_experiment.sh folder_containing_reads/
 Script Documentation
 ====================
 ##clean_reads.sh
-Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY
+Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_PATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
 
  * **-t:** number of threads to use [48]
  * **-d:** directory to put output in [./cleaned_reads]
@@ -130,7 +167,7 @@ Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_P
  * **-2:** pattern to find second mate in pair [R2]
  * **-m:** max memory to give to khmer [64e9]
  * **-c:** max coverage to allow [40000]
- * **READ_DIRECTORY:** directory to search for reads to clean
+ * **-i:** input directory to search for reads to clean
 
 This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY.
 The -d option changes which directory to put output in and defaults to ./cleaned_reads .
@@ -139,17 +176,19 @@ The -f flag is a pattern that finds reads in READ_DIRECTORY matching that patter
 The -1 and -2 flags are the search and replace strings used to find the file containing the mates specified in the file found by the FILE_PATTERN. The default values are R1 and R2. For example, if read mates are specified only by 1 or 2 and not by R1 and R2, -s should be 1 and -r should be 2, so that the mates of reads1.fq are properly found in reads2.fq.
 The -m flag controls how much memory is allocated to khmer and defaults to 64e9.
 The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
+The -i option specifies the directory to search for reads to correct.
 
 ##bwa_aligner.sh
-Usage: bwa_aligner.sh [-t THREADS] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/
+Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/
 
  * **-t:** number of threads to use [48]
+ * **-d:** temporary directory to use
  * **-p:** PLATFORM flag for BAM file [ILLUMINA]
  * **-q:** pattern to find reads ['*.fastq']
  * **-1:** pattern to find first mate in pair [R1]
  * **-2:** pattern to find second mate in pair [R2]
+ * **-o:** BAM file to write alignment to [STDOUT]
  * **-r:** reference to align to with BWA
- * **-o:** BAM file to write alignment to
  * **data/:** directory to search for reads
 
 This script uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
@@ -166,12 +205,16 @@ The pairs of reads should be in the same directory and have the same name except
 For example, in a data directory with reads_R1.fastq and reads_R2.fastq, by default the script will identify the two files by their suffixes, identify the file containing R1 as the first set of reads and substitute R1 with R2 to identify the file containing the second set of reads.
 
 ##stampy_realigner.sh
-Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-q QUAL] reference.fasta data.bam out.bam
+Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-o out.bam] -r reference.fasta -i data.bam
 
-This script uses Stampy to realign unmapped reads and reads lower than QUAL in data.bam and outputs to out.bam. The given reference should be the same used to generate data.bam .
-A temporary directory to be used can be specified with -d; the default is /tmp/.
+ * **-t:** number of threads to use [48]
+ * **-d:** temporary directory to use
+ * **-o:** BAM file to write alignment to [STDOUT]
+ * **-r:** reference to align to with BWA
+ * **-i:** input BAM file to remap
 
-Warning: Stampy tends to crash when Samtools 1.3 is used. Ensure that Samtools 1.2 is at the top of the path before running this script.
+This script uses Stampy to realign poorly mapped reads (from Stampy's --bamkeepgoodreads option) and outputs to `out.bam`. The given reference should be the same used to generate `data.bam`.
+A temporary directory to be used can be specified with -d.
 
 ##create_consensus.sh
 Usage: create_consensus.sh [-t THREADS] [-f FILTER] [-c CHAINFILE] [-b BCFTOOLSFILE] [-o OUTPUT] reference.fasta in.bam
