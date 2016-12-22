@@ -2,15 +2,17 @@
 #bash vcf2tree.sh file.vcf out.pdf
 #Takes file.vcf, filters it using replicate info at various stringencies, and plots the trees.
 
-USAGE="$0 [-t THREADS] -g GROUPBY -i file.vcf -o tree.pdf"
+USAGE="$0 [-t THREADS] [-r raxmlHPC] [-i file.vcf] [-o tree.nwk] -g GROUPBY"
 
 THREADS=4
-INFILE=""
-OUTFILE=""
+INFILE="-"
+OUTFILE="/dev/stdout"
 GROUPBY=""
+RAXMLCALL=raxmlHPC
 trap "exit 1" ERR
+trap 'rm -rf $TMPDIR' EXIT INT TERM HUP
 
-while getopts t:g:i:o:h opt; do
+while getopts t:g:r:i:o:h opt; do
 	case $opt in
 		t)
 			THREADS=$OPTARG
@@ -18,8 +20,14 @@ while getopts t:g:i:o:h opt; do
 		g)
 			GROUPBY=$OPTARG
 			;;
+		r)
+			RAXMLCALL=$OPTARG
+			;;
 		i)
 			INFILE=$OPTARG
+			;;
+		d)
+			TMPOPT=$OPTARG
 			;;
 		o)
 			OUTFILE=$OPTARG
@@ -41,43 +49,18 @@ done
 
 shift $((OPTIND-1)) # get operands
 
-if [ "$INFILE" == "" ]; then
-	echo $USAGE >&2
-	echo "Input file required." >&2
-	exit 1
-fi
-
 if [ "$GROUPBY" == "" ]; then
 	echo $USAGE >&2
 	echo "Size of sample groups required." >&2
 	exit 1
 fi
 
-if [ "$OUTFILE" == "" ]; then
-	echo $USAGE >&2
-	echo "Out file required." >&2
-	exit 1
-fi
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPT vcf2tree_tmp_XXXXXXXX)
+DIPLOIDIFIED=$(mktemp --tmpdir=$TMPDIR --suffix=.fa diploidified_tmp_XXXXXX)
+TREEFOLDER=$(mktemp -d --tmpdir=$TMPDIR vcf2tree_tree_tmp_XXXXXX)
 
-mkdir -p vcf_processing
-cd vcf_processing
+cat $INFILE | perl filt_with_replicates.pl -s -g $GROUPBY | bash vcf2fa.sh | python2 diploidify.py -v > $DIPLOIDIFIED
+${RAXMLCALL} -T $THREADS -f a -s $DIPLOIDIFIED -n nwk -m ASC_GTRGAMMA -w $TREEFOLDER --asc-corr=lewis -p 12345 -x 12345 -# 100
+mv ${TREEFOLDER}/RAxML_bestTree.nwk $OUTFILE
 
-perl filt_with_replicates.pl -s -g $GROUPBY <$INFILE >filtered.vcf
-vcf-to-tab <filtered.vcf >filtered.tab
-perl vcf_tab_to_fasta_alignment.pl -i filtered.tab > cleaned.fasta
-rm filtered.tab_clean
-python2 diploidify.py -i cleaned.fasta -t fasta -o cleaned.dip.phylip-relaxed -p phylip-relaxed -v
-
-mkdir -p tree
-cd tree
-
-raxmlHPC -T $THREADS -f a -s ../cleaned.dip.phylip-relaxed -n nwk -m ASC_GTRGAMMA --asc-corr=lewis -p 12345 -x 12345 -# 100
-
-cd ..
-
-Rscript plot_tree.R tree/RAxML_bestTree.nwk $OUTFILE
-
-cd ..
-
-
-exit
+exit 0
