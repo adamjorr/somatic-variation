@@ -178,6 +178,21 @@ The -m flag controls how much memory is allocated to khmer and defaults to 64e9.
 The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
 The -i option specifies the directory to search for reads to correct.
 
+##slice-paired-reads-by-coverage.py
+Usage: slice-paired-reads-by-coverage.py [-m MIN_COVERAGE] [-M MAX_COVERAGE] INPUT_GRAPH INPUT_READS1 INPUT_READS2 OUTPUT_READS1 OUTPUT_READS2 [OUTPUT_SINGLETONS]
+
+ * **-m:** remove reads with approximate coverage below this value [none]
+ * **-M:** remove reads with approximate coverage above this value [none]
+ * **INPUT_GRAPH:** khmer graph to use
+ * **INPUT_READS1:** first end of paired input reads
+ * **INPUT_READS2:** second end of paired input reads
+ * **OUTPUT_READS1:** first end of paired output reads
+ * **OUTPUT_READS2:** second end of paired output reads
+ * **OUTPUT_SINGLETONS:** file to ouput single reads to if their mate fails filtering [none]
+
+This is a modified version of khmer's [slice-reads-by-coverage.py](https://github.com/dib-lab/khmer/blob/master/sandbox/slice-reads-by-coverage.py) script. It can handle paired-end reads. Check out [this blog post](http://ivory.idyll.org/blog/2014-slice-reads-by-coverage.html) for more details on how the script works. In summary, it will remove reads which have a high or low expected coverage level. This can be useful for removing reads which are likely to be errors or reads likely to map to repetitive regions. All positional arguments are required except the singleton output file. One of -m or -M must be specified.
+
+
 ##bwa_aligner.sh
 Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/
 
