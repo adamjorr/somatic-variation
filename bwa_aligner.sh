@@ -124,7 +124,7 @@ for F in $FASTQFILES; do
 	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
 	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
 	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
-		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp
+		samtools sort -@ $CORES -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
 done
 
 echo Merging . . . >&2
