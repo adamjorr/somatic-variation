@@ -1,6 +1,6 @@
 #!usr/bin/bash
 #bash vcf2tree.sh file.vcf out.pdf
-#Takes file.vcf, filters it using replicate info at various stringencies, and plots the trees.
+#Takes a VCF, filters it using replicate info, and constructs a tree with RAxML
 
 USAGE="$0 [-t THREADS] [-r raxmlHPC] [-i file.vcf] [-o tree.nwk] -g GROUPBY"
 
