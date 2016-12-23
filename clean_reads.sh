@@ -3,7 +3,7 @@
 USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 SEARCH_STRING] [-2 REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY/"
 
 RCORRECTOR="perl run_rcorrector.pl"
-LOAD_COUNTING="scripts/load-into-counting.py"
+LOAD_COUNTING="load-into-counting.py"
 SLICE_BY_COV="slice-paired-reads-by-coverage.py"
 THREADS=48
 DEST_DIRECTORY=./cleaned_reads
