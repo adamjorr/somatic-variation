@@ -24,6 +24,13 @@ Software Installation
 pip install khmer
 ```
 
+If you're having trouble with pip or prefer conda, you can also install khmer with:
+
+```bash
+conda install khmer
+```
+
+
 ###Rcorrector
 ```bash
 git clone https://github.com/mourisl/rcorrector.git
