@@ -68,8 +68,9 @@ if [ ! -e "$DATAFILE" ]; then
 fi
 
 TMPDIR=$(mktemp -d --tmpdir=${TMPOPTION} stampy_realigner_tmp_XXXXXX)
-trap '[ -n "$(jobs -pr)" ] && kill $(jobs -pr); rm -rf $TMPDIR' EXIT INT TERM HUP
+trap '[ -n "$(jobs -pr)" ] && kill $(jobs -pr)' INT TERM HUP
 trap "exit 1" ERR
+trap 'rm -rf $TMPDIR' EXIT
 
 
 if [ ! -e ${REFERENCEFILE%.*}.stidx ]; then
