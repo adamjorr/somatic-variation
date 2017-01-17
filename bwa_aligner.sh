@@ -81,7 +81,7 @@ if [ "$DATADIR" == "" ]; then
 	exit 1
 fi
 
-if [ ! -d "$DATADIR"]; then
+if [ ! -d "$DATADIR" ]; then
 	echo $USAGE >&2
 	echo "$DATADIR is not a directory." >&2
 	exit 1
