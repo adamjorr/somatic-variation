@@ -35,7 +35,7 @@ while getopts d:i:o:h opt; do
 	esac
 done
 
-$TMPDIR=$(mktemp --tmpdir=$TMPOPT vcf2fa_tmp_XXXXXXXX)
+$TMPDIR=$(mktemp -d --tmpdir=$TMPOPT vcf2fa_tmp_XXXXXXXX)
 
 $FIFONAME=$(mktemp -u --tmpdir=$TMPDIR --suffix=.tab $0_pipe_XXXXXXXX)
 mkfifo $FIFONAME;
