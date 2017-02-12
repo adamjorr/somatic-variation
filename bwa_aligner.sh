@@ -81,7 +81,7 @@ if [ "$DATADIR" == "" ]; then
 	exit 1
 fi
 
-if [ ! -d "$DATADIR"]; then
+if [ ! -d "$DATADIR" ]; then
 	echo $USAGE >&2
 	echo "$DATADIR is not a directory." >&2
 	exit 1
@@ -111,9 +111,8 @@ fi
 
 echo Making BAM files . . . >&2
 #Make bamfiles from the FASTQs
-PROGRESS=0
+PROGRESS=1
 for F in $FASTQFILES; do
-	((PROGRESS++))
 	echo Progress: $PROGRESS / $NUMFILES >&2
 	BASEFNAME=$(basename $F)
 	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING}
@@ -125,6 +124,7 @@ for F in $FASTQFILES; do
 	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
 	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
 		samtools sort -@ $CORES -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
+	((PROGRESS++))
 done
 
 echo Merging . . . >&2

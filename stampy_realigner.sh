@@ -82,12 +82,12 @@ if [ ! -e ${REFERENCEFILE%.*}.sthash ]; then
 fi
 
 READGROUPS=$(samtools view -H $DATAFILE | grep ^@RG | cut -f2)
-GROUPARRAY=( $READGROUPS )
-NUMOPERATIONS=$(( ${#GROUPARRAY[@]} + 1 ))
-CORESEACH=$(( $CORES / $NUMOPERATIONS ))
-if [ "$CORESEACH" -lt 1 ]; then
-	CORESEACH=1
-fi
+# GROUPARRAY=( $READGROUPS )
+# NUMOPERATIONS=$(( ${#GROUPARRAY[@]} + 1 ))
+# CORESEACH=$(( $CORES / $NUMOPERATIONS ))
+# if [ "$CORESEACH" -lt 1 ]; then
+# 	CORESEACH=1
+# fi
 
 for GROUP in $READGROUPS; do
 	echo $GROUP >&2
@@ -95,14 +95,13 @@ for GROUP in $READGROUPS; do
 	SANITARYGROUP=${SANITARYGROUP//\//}
 	SANITARYGROUP=${SANITARYGROUP//./}
 	SANITARYGROUP=${SANITARYGROUP//\\/}
-	GROUPFIFO=$(mktemp -u --suffix=.bam --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
-	mkfifo $GROUPFIFO
-	FIFOS=$(echo $FIFOS $GROUPFIFO)
-    stampy -t ${CORESEACH} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} --bamkeepgoodreads -M $DATAFILE --bamsortmemory=2000000000 --readgroup=${GROUP} |
-    samtools sort -@ ${CORESEACH} -l 0 -T ${TMPDIR}/ -m 2G -O bam > $GROUPFIFO &
+	GROUPSAM=$(mktemp --suffix=.sam --tmpdir=$TMPDIR RG_${SANITARYGROUP}_XXX)
+	SAMS=$(echo $SAMS $GROUPSAM)
+    stampy -t ${CORES} -g ${REFERENCEFILE%.*} -h ${REFERENCEFILE%.*} --bamkeepgoodreads -M $DATAFILE --bamsortmemory=2000000000 --readgroup=${GROUP} |
+    samtools sort -@ ${CORES} -T ${TMPDIR}/ -m 2G -O sam -o $GROUPSAM
 done
 
-samtools merge -@ ${CORESEACH} -c -p $OUTFILE $FIFOS
+samtools merge -@ ${CORES} -c -p $OUTFILE $FIFOS
 
 exit 0
 
