@@ -105,7 +105,7 @@ def remove_duplicate_seqs(alignment):
 
 def remove_nonvariable_sites(baselist):
 	"""Takes a baselist and returns an empty list if it is nonvariable, otherwise returns it"""
-	if unique_list_size(baselist) == 1:
+	if unique_list_size(non_gap_bases(baselist)) == 1:
 		return [''] * len(baselist)
 	else:
 		return baselist
