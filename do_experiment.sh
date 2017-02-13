@@ -2,10 +2,10 @@
 
 #Script to replicate the Eucalyptus experiment. Takes the location of the directory containing the raw reads as an argument.
 
-READ_DIR = $1
+READ_DIR=$1
 trap "exit 1" ERR
 #clean reads
-bash clean_reads.sh $READ_DIR
+bash clean_reads.sh -i $READ_DIR
 
 #make first alignment
 mkdir e_mel_1 && cd e_mel_1 #do work in a new directory
