@@ -87,6 +87,12 @@ if [ ! -d "$DATADIR" ]; then
 	exit 1
 fi
 
+if [ $CORES -lt 2 ]; then
+	echo $USAGE >&2
+	echo "Specify two or more threads." >&2
+	exit 1
+fi
+
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
 trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 trap "exit 1" ERR
@@ -122,8 +128,8 @@ for F in $FASTQFILES; do
 	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
 	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
 	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
-	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
-		samtools sort -@ $CORES -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
+	bwa mem -t $(( CORES/2 )) -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
+		samtools sort -@ $(( CORES/2 )) -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
 	((PROGRESS++))
 done
 
