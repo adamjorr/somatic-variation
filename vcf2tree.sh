@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 #bash vcf2tree.sh file.vcf out.pdf
 #Takes a VCF, filters it using replicate info, and constructs a tree with RAxML
 

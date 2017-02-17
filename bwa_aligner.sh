@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.

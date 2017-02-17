@@ -1,4 +1,4 @@
-#!usr/bin/env Rscript
+#!/usr/bin/env Rscript
 #Rscript plot_tree.R tree.nwk out_file.pdf
 
 library('ape')

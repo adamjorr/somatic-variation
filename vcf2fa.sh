@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 #bash vcf2fa.sh <file.vcf >out.fa
 #Takes vcf from STDIN (or -i) and prints a fasta file to STDOUT (or -o)
 
