@@ -19,7 +19,7 @@ TMPOPTION=""
 DATADIR=""
 OUTNAME=/dev/stdout
 
-while getopts :t:p:r:1:2:o:i:q:h opt; do
+while getopts :t:d:p:r:1:2:o:i:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
