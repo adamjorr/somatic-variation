@@ -92,7 +92,7 @@ for F in $(find $READ_DIRECTORY -name "*$FILE_SUFFIX" -and -name "*$SEARCH_STRIN
 done
 
 # Build a graph with khmer
-$LOAD_COUNTING -k $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*${CORR_SUFFIX}
+$LOAD_COUNTING -k $KMER_SIZE -T $THREADS -M $MAX_MEMORY ${DEST_DIRECTORY}/khmer_count.graph ${DEST_DIRECTORY}/corrected/*${CORR_SUFFIX}
 
 # filter on $COVERAGE in parallel using $SLICE_BY_COV
 export SLICE_BY_COV
@@ -104,7 +104,7 @@ export FILE_SUFFIX
 export CORR_SUFFIX
 parallel -j $THREADS --env SLICE_BY_COV --env COVERAGE --env SEARCH_STRING --env REPLACE_STRING \
 --env DEST_DIRECTORY --env FILE_SUFFIX --env CORR_SUFFIX 'F={}; G={/.}; \
-$SLICE_BY_COV -M $COVERAGE khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} \
+$SLICE_BY_COV -M $COVERAGE ${DEST_DIRECTORY}/khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} \
 ${DEST_DIRECTORY}/sliced/${G}_sliced${FILE_SUFFIX} \
 ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/$REPLACE_STRING}_sliced${FILE_SUFFIX} \
 ${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/}_singletons${FILE_SUFFIX}' \
