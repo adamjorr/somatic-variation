@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 
 #stampy_realigner.sh reference.fasta data.bam out.bam
 #Takes reference and realigns reads that are not in a proper pair
