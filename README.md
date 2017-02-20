@@ -187,7 +187,7 @@ The -c flag is an approximate coverage cutoff to filter on using Khmer and defau
 The -i option specifies the directory to search for reads to correct.
 
 ###What it does
-This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
+Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
 
 ###Expected output
 A file containing the khmer graph, called khmer_count.graph.
