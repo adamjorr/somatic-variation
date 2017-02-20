@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 
 from __future__ import print_function
 import argparse
@@ -58,7 +58,7 @@ def main():
 
         seq = record.sequence.upper()
         seq = seq.replace('N', 'A')
-        pair_record = pair_iter.next()
+        pair_record = next(pair_iter)
         pseq = pair_record.sequence.upper()
         pseq = pseq.replace('N','A')
 
