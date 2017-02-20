@@ -92,7 +92,7 @@ for F in $(find $READ_DIRECTORY -name "*$FILE_SUFFIX" -and -name "*$SEARCH_STRIN
 done
 
 # Build a graph with khmer
-$LOAD_COUNTING -ksize $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*${FILE_SUFFIX}
+$LOAD_COUNTING -k $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*${FILE_SUFFIX}
 
 # filter on $COVERAGE in parallel using $SLICE_BY_COV
 parallel -j $THREADS 'F={}; G={/.}; \
