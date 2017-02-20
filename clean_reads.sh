@@ -2,7 +2,7 @@
 #bash clean_reads.sh -t THREADS -d DEST_DIRECTORY -k KMER_SIZE -f FILE_SUFFIX -s SEARCH_STRING -r REPLACE_STRING [-m MAX_MEMORY] [-c COVERAGE] READ_DIRECTORY 
 USAGE="Usage: $0 [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 SEARCH_STRING] [-2 REPLACE_STRING] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY/"
 
-RCORRECTOR="perl run_rcorrector.pl"
+RCORRECTOR="run_rcorrector.pl"
 LOAD_COUNTING="load-into-counting.py"
 SLICE_BY_COV="slice-paired-reads-by-coverage.py"
 THREADS=48
