@@ -92,14 +92,14 @@ for F in $(find $READ_DIRECTORY -name "*$FILE_SUFFIX" -and -name "*$SEARCH_STRIN
 done
 
 # Build a graph with khmer
-$LOAD_COUNTING -k $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*${FILE_SUFFIX}
+$LOAD_COUNTING -k $KMER_SIZE -T $THREADS -M $MAX_MEMORY khmer_count.graph ${DEST_DIRECTORY}/corrected/*${CORR_SUFFIX}
 
 # filter on $COVERAGE in parallel using $SLICE_BY_COV
 parallel -j $THREADS 'F={}; G={/.}; \
 $SLICE_BY_COV -M $COVERAGE khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} \
-${DEST_DIRECTORY}/sliced/${G}_sliced${CORR_SUFFIX} \
-${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/$REPLACE_STRING}_sliced${CORR_SUFFIX} \
-${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/}_singletons${CORR_SUFFIX}' \
+${DEST_DIRECTORY}/sliced/${G}_sliced${FILE_SUFFIX} \
+${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/$REPLACE_STRING}_sliced${FILE_SUFFIX} \
+${DEST_DIRECTORY}/sliced/${G/$SEARCH_STRING/}_singletons${FILE_SUFFIX}' \
 ::: $(find $DEST_DIRECTORY/corrected/ -name "*$CORR_SUFFIX" -and -name "*${SEARCH_STRING}*")
 
 exit
