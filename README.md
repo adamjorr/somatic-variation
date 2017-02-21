@@ -189,6 +189,13 @@ The -i option specifies the directory to search for reads to correct.
 ###What it does
 Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
 
+##Why do we use it
+Later in the pipeline, we want to estimate a genome using the reads we've generated and the reference of a closely related species.
+However, it's infeasible to use a heavy-duty variant caller to approximate a new reference during iteration. Thus, we use an error-prone
+but faster variant caller to approximate each new reference. To reduce the chance of getting errors during the creation of a new reference
+and then fitting to those errors, we remove sequencing error first with Rcorrector. We then remove extremely high-coverage reads
+with Khmer, as these regions can also cause problems with variant calling.
+
 ###Expected output
 A file containing the khmer graph, called khmer_count.graph.
 
@@ -214,6 +221,10 @@ This is a modified version of khmer's [slice-reads-by-coverage.py](https://githu
 
 ###What it does
 Removes reads which have a high or low expected coverage level using khmer.
+
+###Why do we use it
+This is a modified version of a script included in the khmer package. The included version of the script does not keep any read pairing information. Since we have
+paired reads and would like to preserve mate pair information, but also want to filter out highly repetitive reads (as described above), we use this script.
 
 ###Expected output
 3 files: OUTPUT_READS1, OUTPUT_READS2, and OUTPUT_SINGLETONS, which are the first, second, and singleton reads. The singleton reads are those that passed filtering, but their mates did not.
@@ -247,6 +258,9 @@ For example, in a data directory with reads_R1.fastq and reads_R2.fastq, by defa
 ###What it does
 Uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
 
+###Why do we use it
+BWA is a fast and accurate way to map reads to a reference.
+
 ###Expected output
 A bam file, specified by -o.
 
@@ -264,6 +278,10 @@ A temporary directory to be used can be specified with -d.
 
 ###What it does
 Remaps poorly aligned reads in a given bam file using Stampy.
+
+###Why do we use it
+BWA is fast and accurate, while Stampy is slow but even more accurate. We use BWA to align the reads to our reference first, then use Stampy to realign
+the reads that were poorly mapped by BWA.
 
 ###Expected output
 A bam file, specified by -o.
@@ -284,6 +302,11 @@ This script uses bcftools and tabix to create a consensus in fasta format from a
 
 ###What it does
 Uses bcftools and tabix to create a consensus sequence in fasta format from a BAM file.
+
+###Why do we use it
+Since we don't have a proper reference for our data, we call a consensus from our alignment to generate a new reference that is hopefully closer to
+the true reference for our species. Using this reference will improve the quality of an alignment produced using reads from our species.
+A higher quality alignment will lead to higher quality variant calls.
 
 ###Expected output
  * A consensus reference specified by -o.
@@ -307,6 +330,10 @@ A script implementing the [GATK best practices](https://software.broadinstitute.
 ###What it does
 Calls variants from a BAM file using the GATK best practices.
 
+###Why do we use it
+Discovering variants from an alignment of reads is not trivial, so we use the GATK best practices pipeline to do so. Though we are interested in somatic variants,
+we don't use the GATK's somatic variant caller because it is intended for detection of variation in human cancer.
+
 ###Expected output
 A vcf file specified by -o.
 
@@ -321,6 +348,10 @@ This script filters a vcf using replicate data from the VCF. By default, it will
 
 ###What it does
 Filter a vcf using replicate information.
+
+###Why do we use it
+The GATK pipeline doesn't use information about replicates to determine the quality of variants. We have replicates and can use that information to reduce the
+number of false positives with this script.
 
 ###Expected output
 A filtered vcf file printed to stdout.
@@ -337,6 +368,10 @@ Note that any downstream analysis should be done using ascertainment bias correc
 
 ###What it does
 Takes sites from a VCF file and generates a fasta alignment of these sites.
+
+###Why do we use it
+The easiest way to generate a phylogeny with any arbitrary software package is to give it a fasta-formatted alignment of sites.
+We use this script to generate that alignment from our file of variants.
 
 ###Expected output
 A fasta alignment specified by -o. If -o is not used, prints to stdout.
@@ -356,6 +391,11 @@ A script to turn an alignment where each diploid genotype is represented as one 
 ###What it does
 Takes a fasta alignment and doubles the number of sites, eliminating IUPAC ambiguity codes. This is useful if the ambiguity codes represent a diploid genotype and not actual ambiguity.
 
+###Why do we use it
+We have a diploid organism, and at each site the genotype of our diploid is represented with an IUPAC ambiguity code. However, most tree inferring software
+will assume (correctly) that these codes represent ambiguity at a site. Thus, we use this script to remove ambiguiuty codes while retaining information about
+mutation and differences between samples at any site.
+
 ###Expected output
 An alignment specified by -o. If -o is not used, prints to stdout.
 
@@ -373,6 +413,9 @@ Takes a vcf file and filters it using the strict mode of `filt_with_replicates.p
 ###What it does
 Creates a newick tree from a VCF file.
 
+###Why do we use it
+To generate a tree with RAxML.
+
 ###Expected output
 A newick tree specified by -o. If -o is not specified, prints the tree to stdout.
 
@@ -386,6 +429,9 @@ R script to plot the given newick tree. The script will label the tips using the
 
 ###What it does
 Plots a newick tree.
+
+###Why do we use it
+We want to see a graphical representation of what a tree looks like.
 
 ###Expected output
 A pdf file, given as the second argument to the script.
