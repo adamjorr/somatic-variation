@@ -189,7 +189,7 @@ The -i option specifies the directory to search for reads to correct.
 ###What it does
 Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
 
-##Why do we use it
+###Why do we use it
 Later in the pipeline, we want to estimate a genome using the reads we've generated and the reference of a closely related species.
 However, it's infeasible to use a heavy-duty variant caller to approximate a new reference during iteration. Thus, we use an error-prone
 but faster variant caller to approximate each new reference. To reduce the chance of getting errors during the creation of a new reference
