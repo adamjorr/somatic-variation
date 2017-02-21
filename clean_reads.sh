@@ -15,7 +15,7 @@ MAX_MEMORY=64e9 #max memory to be given to khmer
 COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
 READ_DIRECTORY=""
 
-while getopts :t:d:k:f:s:r:m:c:i:h opt; do
+while getopts :t:d:k:f:1:2:m:c:i:h opt; do
 	case $opt in
 		t)
 			THREADS=$OPTARG
