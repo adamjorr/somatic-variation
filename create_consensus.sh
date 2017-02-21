@@ -80,7 +80,7 @@ if [ "$REFFILE" == "" ]; then
 	exit 1
 fi
 
-TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $(basename $0)_tmp_XXXXXX)
 trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 trap "exit 1" ERR
 
