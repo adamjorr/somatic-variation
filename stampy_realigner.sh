@@ -101,7 +101,7 @@ for GROUP in $READGROUPS; do
     samtools sort -@ ${CORES} -T ${TMPDIR}/ -m 2G -O sam -o $GROUPSAM
 done
 
-samtools merge -@ ${CORES} -c -p $OUTFILE $FIFOS
+samtools merge -@ ${CORES} -c -p $OUTFILE $SAMS
 
 exit 0
 
