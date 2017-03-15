@@ -9,6 +9,7 @@ USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 
 
 
 #Here are some things you might want to change:
+RGPL=ILLUMINA #Default platform
 CORES=48
 FILE_PATTERN='*.fastq' #pattern to find first set of reads
 SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
@@ -120,7 +121,10 @@ for F in $FASTQFILES; do
 	SECONDBASE=$(basename $SECONDMATE)
 	BAMOUT=$(mktemp --tmpdir=$TMPDIR --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
 	BAMS=$(echo $BAMS $BAMOUT)
-	ngm -t $(( CORES/2 )) -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE | 
+	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
+	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
+	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
+	ngm -t $(( CORES/2 )) -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE --rg-id ${RGSM} --rg-sm ${RGSM} --rg-lb ${RGLB} --rg-pl ${RGPL} --rg-pu ${RGPU} | 
 		samtools sort -@ $(( CORES/2 )) -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
 	((PROGRESS++))
 done
