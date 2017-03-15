@@ -17,9 +17,10 @@ REPLACE_STRING='R2' #pattern for search/replace to substitute second set of read
 REFERENCEFILE=""
 TMPOPTION=""
 DATADIR=""
+SENSITIVITY=""
 OUTNAME=/dev/stdout
 
-while getopts :t:d:p:r:1:2:o:i:q:h opt; do
+while getopts :t:d:p:r:1:2:o:i:q:s:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -47,6 +48,9 @@ while getopts :t:d:p:r:1:2:o:i:q:h opt; do
 			;;
 		q)
 			FILE_PATTERN=$OPTARG
+			;;
+		s)
+			SENSITIVITY=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -106,6 +110,10 @@ if [ "$FASTQFILES" == '' ]; then
 	exit 1
 fi
 
+if [ "$SENSITIVITY" != "" ]; then
+	SENSITIVITY=$(echo -s $SENSITIVITY)
+fi
+
 echo Specified files are: $FASTQFILES >&2
 echo Specified mates are: ${FASTQFILES/$SEARCH_STRING/$REPLACE_STRING} >&2
 NUMFILES=( $FASTQFILES )
@@ -124,7 +132,7 @@ for F in $FASTQFILES; do
 	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
 	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
 	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
-	ngm -t $(( CORES/2 )) -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE --rg-id ${RGSM} --rg-sm ${RGSM} --rg-lb ${RGLB} --rg-pl ${RGPL} --rg-pu ${RGPU} | 
+	ngm -t $(( CORES/2 )) $SENSITIVITY -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE --rg-id ${RGSM} --rg-sm ${RGSM} --rg-lb ${RGLB} --rg-pl ${RGPL} --rg-pu ${RGPU} | 
 		samtools sort -@ $(( CORES/2 )) -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
 	((PROGRESS++))
 done
