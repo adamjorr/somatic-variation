@@ -14,8 +14,9 @@ REPLACE_STRING='R2' #pattern for search/replace to substitute second set of read
 MAX_MEMORY=64e9 #max memory to be given to khmer
 COVERAGE=40000 #max coverage tolerable  (see khmer slice-reads-by-coverage)
 READ_DIRECTORY=""
+SLICE_THREADS=""
 
-while getopts :t:d:k:f:1:2:m:c:i:h opt; do
+while getopts :t:d:k:f:1:2:m:c:i:s:h opt; do
 	case $opt in
 		t)
 			THREADS=$OPTARG
@@ -43,6 +44,9 @@ while getopts :t:d:k:f:1:2:m:c:i:h opt; do
 			;;
 		i)
 			READ_DIRECTORY=$OPTARG
+			;;
+		s)
+			SLICE_THREADS=$OPTARG
 			;;
 		h)
 			echo $USAGE >&2
@@ -78,6 +82,14 @@ if [ ! -d $READ_DIRECTORY ] ; then
 	exit 1
 fi
 
+if [ "$SLICE_THREADS" == "" ]; then
+	SLICE_THREADS=$((THREADS/6))
+fi
+
+if [ $SLICE_THREADS -eq 0 ]; then
+	SLICE_THREADS=1
+fi
+
 trap "exit 1" ERR
 
 CORR_SUFFIX=.cor${FILE_SUFFIX//.fastq/.fq}
@@ -101,7 +113,7 @@ export REPLACE_STRING
 export DEST_DIRECTORY
 export FILE_SUFFIX
 export CORR_SUFFIX
-parallel -j $THREADS --env SLICE_BY_COV --env COVERAGE --env SEARCH_STRING --env REPLACE_STRING \
+parallel -j $SLICE_THREADS --env SLICE_BY_COV --env COVERAGE --env SEARCH_STRING --env REPLACE_STRING \
 --env DEST_DIRECTORY --env FILE_SUFFIX --env CORR_SUFFIX 'F={}; G={/.}; \
 $SLICE_BY_COV -M $COVERAGE ${DEST_DIRECTORY}/khmer_count.graph $F ${F/$SEARCH_STRING/$REPLACE_STRING} \
 ${DEST_DIRECTORY}/sliced/${G}_sliced${FILE_SUFFIX} \
