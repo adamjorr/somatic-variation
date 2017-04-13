@@ -88,6 +88,18 @@ if [ "$BCFTOOLSFILE" == "" ]; then
 	BCFTOOLSFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf.gz bcftools_calls_XXXXXX)
 fi
 
+CHRS=$(samtools view -H $BAMFILE | grep ^@SQ | cut -f 2 | sed -n -e 's/^.*://p')
+CHRSARY=( $CHRS )
+NUMCHR=${#CHRSARY[@]}
+if [ $CORES -gt $NUMCHR ]; then
+	CORES=$NUMCHR
+fi
+
+parallel -j $CORES --env BAMFILE --env REFFILE --env BCFTOOLSFILE --env FILTER
+
+
+
+
 samtools mpileup -uf $REFFILE $BAMFILE | bcftools call --threads $CORES -mv -Ou | bcftools filter --threads $CORES -Oz -o $BCFTOOLSFILE -e $FILTER
 tabix $BCFTOOLSFILE
 cat $REFFILE | bcftools consensus $BCFTOOLSFILE -c $CHAINFILE > $OUTPUT
