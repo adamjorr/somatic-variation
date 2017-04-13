@@ -165,9 +165,10 @@ do_experiment.sh folder_containing_reads/
 Script Documentation
 ====================
 ##clean_reads.sh
-Usage: clean_reads.sh [-t THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
+Usage: clean_reads.sh [-t THREADS] [-s SLICE_THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
 
  * **-t:** number of threads to use [48]
+ * **-s:** threads to use during slicing [THREADS/6]
  * **-d:** directory to put output in [./cleaned_reads]
  * **-k:** size of kmer to use [32]
  * **-f:** pattern matched to find reads [.fastq]
@@ -185,6 +186,7 @@ The -1 and -2 flags are the search and replace strings used to find the file con
 The -m flag controls how much memory is allocated to khmer and defaults to 64e9.
 The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
 The -i option specifies the directory to search for reads to correct.
+The -s option specifies the number of threads to use during khmer slicing. This will use MAX_MEMORY x SLICE_THREADS amount of memory, so make sure your system supports at least that much memory or the program will crash.
 
 ###What it does
 Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
