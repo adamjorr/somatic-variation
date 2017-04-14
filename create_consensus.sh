@@ -100,7 +100,8 @@ parallel -j $CORES --env BAMFILE --env REFFILE --env BCFTOOLSFILE --env FILTER
 
 
 
-samtools mpileup -uf $REFFILE $BAMFILE | bcftools call --threads $CORES -mv -Ou | bcftools filter --threads $CORES -Oz -o $BCFTOOLSFILE -e $FILTER
+samtools mpileup -uf $REFFILE $BAMFILE | bcftools call -mv -Ou | bcftools filter -Oz -o $BCFTOOLSFILE -e $FILTER
+bcftools concat -Oz -o $BCFTOOLSFILE $CHRFILES
 tabix $BCFTOOLSFILE
 cat $REFFILE | bcftools consensus $BCFTOOLSFILE -c $CHAINFILE > $OUTPUT
 
