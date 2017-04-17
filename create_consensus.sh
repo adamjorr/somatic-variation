@@ -95,12 +95,12 @@ if [ $CORES -gt $NUMCHR ]; then
 	CORES=$NUMCHR
 fi
 
-parallel -j $CORES --env BAMFILE --env REFFILE --env BCFTOOLSFILE --env FILTER
+CHRFILES=$(echo ${CHRS[@]} | xargs -n 1 | xargs -n 1 -I{} mktemp --tmpdir=$TMPDIR --suffix=.vcf.gz {}_XXXXXX)
 
+parallel --link -j $CORES --env BAMFILE --env REFFILE --env FILTER \
+'samtools mpileup -r {1} -uf $REFFILE $BAMFILE | bcftools call -mv -Ou | bcftools filter -Oz -o {2} -e $FILTER' \
+::: ${CHRS[@]} ::: ${CHRFILES}
 
-
-
-samtools mpileup -uf $REFFILE $BAMFILE | bcftools call -mv -Ou | bcftools filter -Oz -o $BCFTOOLSFILE -e $FILTER
 bcftools concat -Oz -o $BCFTOOLSFILE $CHRFILES
 tabix $BCFTOOLSFILE
 cat $REFFILE | bcftools consensus $BCFTOOLSFILE -c $CHAINFILE > $OUTPUT
