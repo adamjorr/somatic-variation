@@ -9,6 +9,7 @@ BCFTOOLSFILE=""
 BAMFILE=""
 REFFILE=""
 TMPOPTION=""
+PICARD="picard"
 
 while getopts :t:d:b:c:f:o:i:r:h opt; do
 	case $opt in
