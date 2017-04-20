@@ -97,6 +97,8 @@ fi
 
 CHRFILES=$(echo ${CHRS[@]} | xargs -n 1 | xargs -n 1 -I{} mktemp --tmpdir=$TMPDIR --suffix=.vcf.gz {}_XXXXXX)
 
+samtools index ${BAMFILE}
+
 export BAMFILE
 export REFFILE
 export FILTER
