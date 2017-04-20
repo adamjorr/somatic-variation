@@ -101,7 +101,7 @@ export BAMFILE
 export REFFILE
 export FILTER
 parallel --link -j $CORES --halt now,fail=1 --env BAMFILE --env REFFILE --env FILTER \
-'samtools mpileup -r {1} -uf ${REFFILE} ${BAMFILE} | bcftools call -mv -Ou | bcftools filter -Oz -o {2} -e ${FILTER}' \
+'samtools mpileup -r {1} -guf ${REFFILE} ${BAMFILE} | bcftools call -mv -Ou | bcftools filter -Oz -o {2} -e ${FILTER}' \
 ::: ${CHRS[@]} ::: ${CHRFILES}
 
 bcftools concat -Oz -o $BCFTOOLSFILE $CHRFILES
