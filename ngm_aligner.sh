@@ -140,6 +140,6 @@ for F in $FASTQFILES; do
 done
 
 echo Merging . . . >&2
-samtools merge -@ $CORES $OUTNAME $BAMS
+samtools merge -c -p -@ $CORES $OUTNAME $BAMS
 
 exit 0
