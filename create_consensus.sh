@@ -96,14 +96,16 @@ if [ $CORES -gt $NUMCHR ]; then
 fi
 
 CHRFILES=$(echo ${CHRS[@]} | xargs -n 1 | xargs -n 1 -I{} mktemp --tmpdir=$TMPDIR --suffix=.vcf.gz {}_XXXXXX)
+DEDUPLIFIEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam dedup_XXX)
+METRICFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.txt metrics_XXX)
+$PICARD MarkDuplicates INPUT=${BAMFILE} OUTPUT=${DEDUPLIFIEDBAM} METRICS_FILE=$METRICFILE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000
+samtools index ${DEDUPLIFIEDBAM}
 
-samtools index ${BAMFILE}
-
-export BAMFILE
+export DEDUPLIFIEDBAM
 export REFFILE
 export FILTER
-parallel --link -j $CORES --halt now,fail=1 --env BAMFILE --env REFFILE --env FILTER \
-'samtools mpileup -r {1} -guf ${REFFILE} ${BAMFILE} | bcftools call -mv -Ou | bcftools filter -Oz -o {2} -e ${FILTER}' \
+parallel --link -j $CORES --halt now,fail=1 --env DEDUPLIFIEDBAM --env REFFILE --env FILTER \
+'samtools mpileup -r {1} -guf ${REFFILE} ${DEDUPLIFIEDBAM} | bcftools call -mv -Ou | bcftools filter -Oz -o {2} -e ${FILTER}' \
 ::: ${CHRS[@]} ::: ${CHRFILES}
 
 bcftools concat -Oz -o $BCFTOOLSFILE $CHRFILES
