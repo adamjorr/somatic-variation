@@ -127,13 +127,15 @@ for F in $FASTQFILES; do
 	BASEFNAME=$(basename $F)
 	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING}
 	SECONDBASE=$(basename $SECONDMATE)
+	TMPSAM=$(mktemp --tmpdir=$TMPDIR --suffix=.sam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
 	BAMOUT=$(mktemp --tmpdir=$TMPDIR --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
 	BAMS=$(echo $BAMS $BAMOUT)
 	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
 	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
 	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
-	ngm -t $(( CORES/2 )) $SENSITIVITY -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE --rg-id ${RGSM} --rg-sm ${RGSM} --rg-lb ${RGLB} --rg-pl ${RGPL} --rg-pu ${RGPU} | 
-		samtools sort -@ $(( CORES/2 )) -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
+	ngm -t ${CORES} $SENSITIVITY -r $REFERENCEFILE -p -1 $F -2 $SECONDMATE --rg-id ${RGSM} --rg-sm ${RGSM} --rg-lb ${RGLB} --rg-pl ${RGPL} --rg-pu ${RGPU} -o $TMPSAM
+	samtools sort -@ ${CORES} -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/ $TMPSAM
+	rm $TMPSAM
 	((PROGRESS++))
 done
 
