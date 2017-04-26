@@ -101,7 +101,7 @@ DEDUPLIFIEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam dedup_XXX)
 METRICFILE=$(mktemp --tmpdir=$TMPDIR --suffix=.txt metrics_XXX)
 $PICARD MarkDuplicates INPUT=${BAMFILE} OUTPUT=${DEDUPLIFIEDBAM} METRICS_FILE=$METRICFILE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000 TMP_DIR=$TMPDIR
 samtools index ${DEDUPLIFIEDBAM}
-samtools index ${REFFILE}
+samtools faidx ${REFFILE}
 
 export DEDUPLIFIEDBAM
 export REFFILE
