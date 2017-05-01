@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 ##TODO: REMOVE ALIGNMENT COMPONENTS, UPDATE DOCS + VARIABLES
 #aligntoref.sh reference.fasta data.bam
 #Takes reference and aligns all .fastq files in any subdirectory and calls SNPs with GATK.
