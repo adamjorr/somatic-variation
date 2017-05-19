@@ -97,12 +97,12 @@ FULLINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.interval_list fullIntervals_XX
 SCATTEREDINTERVALDIR=$(mktemp -d --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
 SCATTEREDFIRSTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_first_calls_XXX)
 SUFFIXES=$(seq -f %02.0f 0 $((CORES-1)))
-SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR --suffix=.vcf first_calls_{}_XXXXXX)
+SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR --suffix=.vcf.gz first_calls_{}_XXXXXX)
 CMDFIRSTCALLS=$(echo $SCATTEREDFIRSTCALLS | tr ' ' '\n' | xargs -i echo -V {})
 JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf joined_first_calls_XXX)
 RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXX)
 SCATTEREDOUTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_output_calls_XXX)
-SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf out_call_{}_XXXXXX)
+SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf.gz out_call_{}_XXXXXX)
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo -V {})
 RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
 
@@ -133,6 +133,7 @@ java -jar ${GATK} -T PrintReads -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFIL
 rm $DEDUPLIFIEDBAM $RECALDATATABLE
 parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} ${BEDFILE} -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
 rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
-java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${OUTFILE} ${CMDOUTCALLS}
+# java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${OUTFILE} ${CMDOUTCALLS}
+bcftools concat -a -Ov -o ${OUTFILE} ${SCATTEREDOUTCALLS}
 
 exit 0
