@@ -105,7 +105,7 @@ RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXX)
 SCATTEREDOUTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_output_calls_XXX)
 SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf.gz out_call_{}_XXXXXX)
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo I={})
-OUTCALLS=$(mktemp -d --tmpdir=$TMPDIR --suffix=.vcf out_calls_XXX)
+OUTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf out_calls_XXX)
 RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
 
 
@@ -129,7 +129,7 @@ parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller --pair_hmm_implementation
 # java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS}
 # bcftools concat -a -Ov -o ${JOINEDFIRSTCALLS} ${SCATTEREDFIRSTCALLS}
 $PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
-rm $SCATTEREDFIRSTCALLS
+rm $SCATTEREDFIRSTCALLS ${SORTEDFIRSTCALLS}.idx
 # rm $JOINEDFIRSTCALLS
 java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
 rm $SORTEDFIRSTCALLS
