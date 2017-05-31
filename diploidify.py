@@ -51,15 +51,20 @@ def is_biallelic(baselist):
 	return unique_list_size(baselist) < 3
 
 def unique_list_size(alist):
-	"""Returns the size of a unique version of the input list (ignoring gaps)"""
-	blist = [a for a in alist if a not in gaps.keys()]
-	return len(dict(zip(blist,blist)))
+	"""Returns the size of a unique version of the input list"""
+	return len(set(alist))
+
+def non_gap_bases(baselist):
+	"""Returns all bases in a list that are not gaps"""
+	return [b for b in baselist if b not in gaps]
 
 def is_single_mutation(constantlist, variedlist):
 	"""Returns TRUE if only a single mutation occured at this site; false otherwise"""
-	if unique_list_size(constantlist) == 1 and unique_list_size(variedlist) == 2: return True
-	if unique_list_size(variedlist) == 1 and unique_list_size(constantlist) == 2: return True 
-	if unique_list_size(constantlist) == unique_list_size(variedlist) == 1: return True
+	cbases = non_gap_bases(constantlist)
+	vbases = non_gap_bases(variedlist)
+	if unique_list_size(cbases) == 1 and unique_list_size(vbases) == 2: return True
+	if unique_list_size(vbases) == 1 and unique_list_size(cbases) == 2: return True 
+	if unique_list_size(cbases) == unique_list_size(vbases) == 1: return True
 	return False
 
 def diploidify(baselist):
@@ -72,7 +77,7 @@ def diploidify(baselist):
 			constant.extend('-')
 			varied.extend('-')
 		else:
-			#We need to be careful about this to account for something like R -> W mutant (A/G -> A/T)
+			#We need to be careful about this to account for something like M -> S mutant (A/C -> C/G)
 			#So we make a nonvariable haplotype + a variable haplotype
 			if constant[0] == iupac[base][0]:
 				constant.extend(iupac[base][0])
@@ -94,13 +99,13 @@ def remove_duplicate_seqs(alignment):
 		sequence = record.seq
 		if sequence not in newseqs:
 			newseqs.append(record.seq)
-			record.seq = Seq(str(record.seq).replace('N','-'), record.seq.alphabet)
+			# record.seq = Seq(str(record.seq).replace('N','-'), record.seq.alphabet)
 			returnseqs.append(record)
 	return MultipleSeqAlignment(returnseqs)
 
 def remove_nonvariable_sites(baselist):
 	"""Takes a baselist and returns an empty list if it is nonvariable, otherwise returns it"""
-	if unique_list_size(baselist) == 1:
+	if unique_list_size(non_gap_bases(baselist)) == 1:
 		return [''] * len(baselist)
 	else:
 		return baselist
@@ -108,9 +113,9 @@ def remove_nonvariable_sites(baselist):
 def main():
 	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
 	parser.add_argument("-i","--input", help="input file (default: stdin)")
-	parser.add_argument("-t","--type", help="filetype (default: phylip-relaxed)", default="phylip-relaxed")
+	parser.add_argument("-t","--type", help="filetype (default: fasta)", default="fasta")
 	parser.add_argument("-o","--output",help="output file (default: stdout)")
-	parser.add_argument("-p","--outtype",help="output filetype (default: phylip-relaxed)", default="phylip-relaxed")
+	parser.add_argument("-p","--outtype",help="output filetype (default: fasta)", default="fasta")
 	parser.add_argument("-v","--variable",help="only output variable sites",action="store_true")
 	parser.add_argument("-s","--skip",help="keep single-letter notation but keep other checks",action="store_true")
 	args = parser.parse_args()
@@ -126,7 +131,7 @@ def main():
 	for i in range(0,seqs.get_alignment_length()):
 		baselist = list(seqs[:,i])
 		if not is_biallelic(baselist): continue
-		if not is_valid_site(baselist): continue
+		# if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist) #turn baselist into 2 baselists, expanding using IUPAC notation
 		if not is_single_mutation(c,v): continue
@@ -137,8 +142,10 @@ def main():
 			if c == v == [''] * len(c): continue
 				
 		combined = list()
-		if skip: combined = baselist
-		else: combined = [c[k] + v[k] for k in range(0,len(c))]
+		if skip:
+			combined = baselist
+		else:
+			combined = [c[k] + v[k] for k in range(0,len(c))]
 		newalignment = [newalignment[j] + combined[j] for j in range(0,len(combined))]
 
 	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]

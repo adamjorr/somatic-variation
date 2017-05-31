@@ -1,9 +1,9 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 
 #bwa_aligner.sh reference.fasta
 #Takes reference and aligns all .fastq files in any subdirectory.
 #This is a modified version of align_fastq which uses bwa instead of bowtie.
-USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] -r reference.fa -o out.bam data/"
+USAGE="Usage: $0 [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/"
 
 
 
@@ -16,9 +16,10 @@ SEARCH_STRING='R1' #pattern for search/replace to find second set of reads
 REPLACE_STRING='R2' #pattern for search/replace to substitute second set of reads
 REFERENCEFILE=""
 TMPOPTION=""
-OUTNAME=""
+DATADIR=""
+OUTNAME=/dev/stdout
 
-while getopts :t:p:r:1:2:o:q:h opt; do
+while getopts :t:d:p:r:1:2:o:i:q:h opt; do
 	case $opt in
 		t)
 			CORES=$OPTARG
@@ -41,6 +42,9 @@ while getopts :t:p:r:1:2:o:q:h opt; do
 		o)
 			OUTNAME=$OPTARG
 			;;
+		i)
+			DATADIR=$OPTARG
+			;;
 		q)
 			FILE_PATTERN=$OPTARG
 			;;
@@ -60,28 +64,42 @@ while getopts :t:p:r:1:2:o:q:h opt; do
 done
 
 shift $((OPTIND-1)) # get operands
-if [ $# -ne 1 ]; then			#if we forget arguments
-	echo $USAGE	#remind us
+if [ $# -ne 0 ]; then			#if we forget arguments
+	echo $USAGE	>&2#remind us
 	exit 1				#and exit with error
 fi
 
 if [ "$REFERENCEFILE" == "" ]; then
-	echo $USAGE
-	echo "Reference file required."
+	echo $USAGE >&2
+	echo "Reference file required." >&2
 	exit 1
 fi
 
-if [ "$OUTNAME" == "" ]; then
-	echo $USAGE
-	echo "Output file name required."
+if [ "$DATADIR" == "" ]; then
+	echo $USAGE >&2
+	echo "Input directory required." >&2
 	exit 1
 fi
 
-TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $0_tmp_XXXXXX)
+if [ ! -d "$DATADIR" ]; then
+	echo $USAGE >&2
+	echo "$DATADIR is not a directory." >&2
+	exit 1
+fi
+
+if [ $CORES -lt 2 ]; then
+	echo $USAGE >&2
+	echo "Specify two or more threads." >&2
+	exit 1
+fi
+
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION $(basename $0)_tmp_XXXXXX)
+trap "rm -rf $TMPDIR" EXIT INT TERM HUP
+trap "exit 1" ERR
+
 
 #Some variables
-DATADIR=$1
-FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*") || exit
+FASTQFILES=$(find $DATADIR -name "$FILE_PATTERN" -and -name "*${SEARCH_STRING}*")
 
 if [ "$FASTQFILES" == '' ]; then
 	echo "Searching for files that match $FILE_PATTERN and ${SEARCH_STRING} in $DATADIR failed" >&2
@@ -99,26 +117,23 @@ fi
 
 echo Making BAM files . . . >&2
 #Make bamfiles from the FASTQs
-PROGRESS=0
+PROGRESS=1
 for F in $FASTQFILES; do
-	((PROGRESS++))
 	echo Progress: $PROGRESS / $NUMFILES >&2
-	BASEFNAME=$(basename $F) || exit 1
-	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING} || exit 1
-	SECONDBASE=$(basename $SECONDMATE) || exit 1
+	BASEFNAME=$(basename $F)
+	SECONDMATE=${F/$SEARCH_STRING/$REPLACE_STRING}
+	SECONDBASE=$(basename $SECONDMATE)
 	BAMOUT=$(mktemp --tmpdir=$TMPDIR --suffix=.bam ${BASEFNAME%$SEARCH_STRING*}_XXXXXXXXXX)
-	BAMS=$(echo $BAMS $BAMOUT) || exit 1
-	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.) || exit 1
-	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F || exit 1
-	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F || exit 1
-	bwa mem -t ${CORES} -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
-		samtools sort -@ $CORES -o $BAMOUT -m 2G -T tmp || exit 1
+	BAMS=$(echo $BAMS $BAMOUT)
+	RGPU=$(head -n 1 $F | cut -d: -f3,4 --output-delimiter=.)
+	RGLB=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGLB=$F
+	RGSM=$(expr $F : '.*\(M[0-9]*[abc]\)') || RGSM=$F
+	bwa mem -t $(( CORES/2 )) -M -R '@RG\tID:'${RGSM}'\tPL:'${RGPL}'\tPU:'${RGPU}'\tLB:'${RGLB}'\tSM:'${RGSM} $REFERENCEFILE $F $SECONDMATE | 
+		samtools sort -@ $(( CORES/2 )) -o $BAMOUT -O bam -m 2G -T ${TMPDIR}/
+	((PROGRESS++))
 done
 
 echo Merging . . . >&2
-samtools merge -@ $CORES $OUTNAME $BAMS || exit 1
-
-#Now clean up
-rm -rf $TMPDIR || exit
+samtools merge -@ $CORES $OUTNAME $BAMS
 
 exit 0

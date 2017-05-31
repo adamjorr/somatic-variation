@@ -97,4 +97,12 @@ Now obtain a consensus with
 
 TBC
 
-
+Average Number of Mismatches per Read
+=====================================
+AVGMISMATCHES=$(samtools view -h -s .01 ../e_mel_1/e_mel_bwa_1.bam |
+samtools view -h -b -u -q ${QUAL} -F4 -o /dev/null -U /dev/stdout |
+samtools calmd -e - ../ref.fa |
+cut -f10 |
+head -n 20 |
+tr -d = |
+awk '{sum += length} END {printf "%0.0f\n" ,sum / NR}')

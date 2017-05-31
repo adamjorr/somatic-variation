@@ -1,4 +1,4 @@
-#!usr/bin/bash
+#!/usr/bin/bash
 
 #aligntoref.sh reference.fasta data/ out.bam
 #Takes reference and aligns all .fastq files in the data subdirectory that contain R1 in their name.

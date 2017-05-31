@@ -1,4 +1,4 @@
-#!usr/bin/env perl
+#!/usr/bin/env perl
 #Returns a tab-delimited file of frequencies of a list of numbers given, one on each line.
 #For example, samtools view FILE | cut -f5 | mapq_freq.pl > stats.txt
 
