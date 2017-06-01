@@ -1,5 +1,7 @@
-A Pipeline For the Detection of Somatic Variants
-================================================
+A Pipeline For the Detection of Somatic Variants (parallelized on NCI)
+======================================================================
+This version includes modified scripts to submit PBS jobs to the Australian National Computing Infrastructure HPC.
+
 Herein we describe our pipeline for detecting somatic mutants. 
 
 Many scripts in this pipeline use temporary files that are prone to clobbering, so don't attempt to run these scripts in parallel unless you do so in another working directory.
