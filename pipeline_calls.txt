@@ -1,0 +1,5 @@
+# align a directory of fastq.gz samples to a reference, spread over multiple NCI nodes
+ bash ngm_aligner.sh -r /short/xf1/Epauc/pseudoref/RB7_5.fa -i /short/xf1/Epauc/raw/SN877_merged_paired/
+
+# mark duplicates for a directory of BAMs with picard
+ bash gatkcaller.sh -t 1 -r /short/xf1/Epauc/pseudoref/RB7_5.fa -i /short/xf1/Epauc/bam
