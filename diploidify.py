@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """
 Take IUPAC alignment and remove sites that require 2 mutations (ie C/C -> T/T)
