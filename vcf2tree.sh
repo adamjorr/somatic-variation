@@ -59,7 +59,7 @@ TMPDIR=$(mktemp -d --tmpdir=$TMPOPT vcf2tree_tmp_XXXXXXXX)
 DIPLOIDIFIED=$(mktemp --tmpdir=$TMPDIR --suffix=.fa diploidified_tmp_XXXXXX)
 TREEFOLDER=$(mktemp -d --tmpdir=$TMPDIR vcf2tree_tree_tmp_XXXXXX)
 
-cat $INFILE | perl filt_with_replicates.pl -s -g $GROUPBY | bash vcf2fa.sh | python2 diploidify.py -v > $DIPLOIDIFIED
+cat $INFILE | filt_with_replicates.pl -s -g $GROUPBY | vcf2fa.sh | diploidify.py -v > $DIPLOIDIFIED
 ${RAXMLCALL} -T $THREADS -f a -s $DIPLOIDIFIED -n nwk -m ASC_GTRGAMMA -w $TREEFOLDER --asc-corr=lewis -p 12345 -x 12345 -# 100
 cat ${TREEFOLDER}/RAxML_bestTree.nwk >$OUTFILE
 
