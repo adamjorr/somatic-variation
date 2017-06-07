@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -P xf1
 #PBS -q express
-#PBS -l walltime=01:00:00
-#PBS -l mem=32GB
+#PBS -l walltime=02:00:00
+#PBS -l mem=16GB
 #PBS -l ncpus=8
 #PBS -l wd
 #PBS -l jobfs=20GB

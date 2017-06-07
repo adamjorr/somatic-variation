@@ -1,0 +1,127 @@
+#!/bin/bash
+#PBS -P xf1
+#PBS -q normalbw
+#PBS -l walltime=08:00:00
+#PBS -l mem=32GB
+#PBS -l ncpus=28
+#PBS -l wd
+
+module load java
+module load samtools/1.4
+
+PROJ=/short/xf1/test
+JOBS=/short/xf1/src_big/somatic-variation/HPC_jobs
+PICARD="java -jar $HOME/apps/bin/picard.jar" 		#How do I call picard on this system?
+GATK=/short/xf1/src_big/GATK/GenomeAnalysisTK.jar #Location of your GATK jar
+NODES=80						# the number of single thread nodes to be used by scatter-gather GATK processes
+TMP=${PROJ}/tmp
+BEDFILE=""
+NUMNS=30
+OUTFILE=${PROJ}/GATK_master_fulltest_out.vcf
+
+### parameters received from -v
+REFERENCEFILE=$REF
+DEDUPLIFIEDBAM=$BAM
+
+### Set up a crap-ton of temporary directories and files!
+TMPDIR=$(mktemp -d --tmpdir=$TMP gatkcaller_tmp_XXXXXX)
+REFERENCEDICT=${REFERENCEFILE%.*}.dict
+FULLINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.interval_list fullIntervals_XXX)
+SCATTEREDINTERVALDIR=$(mktemp -d --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
+SCATTEREDFIRSTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_first_calls_XXX)
+SUFFIXES=$(seq -f %02.0f 01 $((NODES)))
+SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR --suffix=.vcf.gz first_calls_{}_XXXXXX)
+
+CMDFIRSTCALLS=$(echo $SCATTEREDFIRSTCALLS | tr ' ' '\n' | xargs -i echo I={})
+JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf joined_first_calls_XXX)
+SORTEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf sorted_first_calls_XXX)
+RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXX)
+SCATTEREDOUTCALLDIR=$(mktemp -d --tmpdir=$TMPDIR scattered_output_calls_XXX)
+SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf.gz out_call_{}_XXXXXX)
+CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo I={})
+OUTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf out_calls_XXX)
+RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
+TOUCHDIR1=$(mktemp -d --tmpdir=$TMPDIR GATK_scatter1_done_XXX)
+TOUCHDIR2=$(mktemp -d --tmpdir=$TMPDIR GATK_scatter2_done_XXX)
+
+### index the reference file if it hasn't already been done
+if [ ! -e ${REFERENCEFILE}.fai ]; then
+        samtools faidx $REFERENCEFILE                   # quick
+fi
+
+if [ ! -e ${REFERENCEDICT} ]; then
+        echo "$PICARD CreateSequenceDictionary REFERENCE=${REFERENCEFILE} OUTPUT=${REFERENCEDICT}"
+        $PICARD CreateSequenceDictionary REFERENCE=${REFERENCEFILE} OUTPUT=${REFERENCEDICT}     # very quick
+fi
+
+### SCATTER (i.e. divide up the genome for parallelisation)
+echo "$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}"
+$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}        #very quick
+echo "IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}"
+$PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}             #very quick. For each core it makes a tmp directory containing a subset of intervals.
+           
+# run GATK for each scatter interval
+SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list' | sort)
+
+declare -a ARRAY_SI=($SCATTEREDINTERVALS)
+declare -a ARRAY_SFC=($SCATTEREDFIRSTCALLS)
+JOBIDLIST=""
+
+for ((i=0; i<$NODES; i++));
+do
+        SI=${ARRAY_SI[$i]}
+        SFC=${ARRAY_SFC[$i]}
+        echo "GATK.job ${i}: qsub -v REF=$REFERENCEFILE,BAM=$DEDUPLIFIEDBAM,BED=$BEDFILE,SCATTEREDINTERVAL=$SI,SCATTEREDCALL=$SFC,TOUCHDIR=$TOUCHDIR1,PID=$i $JOBS/GATK.job"
+        qsub -v REF=$REFERENCEFILE,BAM=$DEDUPLIFIEDBAM,BED=$BEDFILE,SCATTEREDINTERVAL=$SI,SCATTEREDCALL=$SFC,TOUCHDIR=$TOUCHDIR1,PID=$i $JOBS/GATK.job
+        sleep 0.1
+done
+
+
+# wait until all GATK job nodes are completed. for now this assumes each completed node was successful!
+while [ $(ls ${TOUCHDIR1}/*.done | wc -l) -lt $NODES ];
+do
+	sleep 60	# check GATK job status once per minute
+done
+
+### GATHER
+echo "$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}"
+$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
+rm $SCATTEREDFIRSTCALLS 
+rm $SORTEDFIRSTCALLS.idx
+
+### Recalibrate base calls
+echo "${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -L ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE"
+java -Xmx24G -jar ${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -L ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
+#rm $SORTEDFIRSTCALLS
+
+echo "${GATK} -T PrintReads -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM"
+java -Xmx24G -jar ${GATK} -T PrintReads -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM
+#rm $DEDUPLIFIEDBAM $RECALDATATABLE
+
+### SCATTER again
+
+declare -a ARRAY_SOC=($SCATTEREDOUTCALLS)
+
+for ((i=0; i<$NODES; i++));
+do
+        SI=${ARRAY_SI[$i]}
+        SOC=${ARRAY_SOC[$i]}
+        echo "GATK.job ${i}: qsub -v REF=$REFERENCEFILE,BAM=$RECALIBRATEDBAM,BED=$BEDFILE,SCATTEREDINTERVAL=$SI,SCATTEREDCALL=$SOC,TOUCHDIR=$TOUCHDIR2,PID=$i $JOBS/GATK.job"
+        qsub -v REF=$REFERENCEFILE,BAM=$RECALIBRATEDBAM,BED=$BEDFILE,SCATTEREDINTERVAL=$SI,SCATTEREDCALL=$SOC,TOUCHDIR=$TOUCHDIR2,PID=$i $JOBS/GATK.job
+        sleep 0.1
+done
+
+# wait until all GATK job nodes are completed. for now this assumes each completed node was successful!
+while [ $(ls ${TOUCHDIR2}/*.done | wc -l) -lt $NODES ];
+do
+        sleep 60        # check GATK job status once per minute
+done
+
+
+### Gather final variant calls
+#rm $SCATTEREDINTERVALS 
+#rm $RECALIBRATEDBAM
+echo "$PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}"
+$PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}
+
+exit 0

@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -P xf1
+#PBS -q express
+#PBS -l walltime=04:00:00
+#PBS -l mem=8GB
+#PBS -l ncpus=1
+#PBS -l wd
+
+module load java
+
+java -jar /short/xf1/src_big/GATK/GenomeAnalysisTK.jar -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING \
+ -R ${REF} -I $BAM -L ${SCATTEREDINTERVAL} -stand_call_conf 50 -ploidy 2 -o ${SCATTEREDCALL}
+
+
+#java -jar /short/xf1/src_big/GATK/GenomeAnalysisTK.jar -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING \
+# -R ${REF} -I $BAM -L ${BED} -stand_call_conf 50 -ploidy 2 -o ${SCATTEREDCALL}
+
+touch ${TOUCHDIR}/${PID}.done

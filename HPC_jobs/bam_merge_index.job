@@ -1,0 +1,18 @@
+#!/bin/bash
+#PBS -P xf1
+#PBS -q express
+#PBS -l walltime=02:00:00
+#PBS -l mem=16GB
+#PBS -l ncpus=16
+#PBS -l wd
+
+
+module load java
+module load samtools/1.4
+
+DEDUPBAMS=$(find ${DEDUPDIR}/*.bam)
+samtools merge -c -p -@ 16 ${MERGEDDIR}/dedup_merged.bam $DEDUPBAMS
+
+# now index the big merged bam! takes about 1 hour.
+java -Xmx14G -jar ~/apps/bin/picard.jar BuildBamIndex INPUT=${MERGEDDIR}/dedup_merged.bam
+
