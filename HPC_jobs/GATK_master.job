@@ -1,23 +1,24 @@
 #!/bin/bash
 #PBS -P xf1
 #PBS -q normalbw
-#PBS -l walltime=08:00:00
+#PBS -l walltime=48:00:00
 #PBS -l mem=32GB
 #PBS -l ncpus=28
 #PBS -l wd
+#PBS -l jobfs=5GB
 
 module load java
 module load samtools/1.4
 
-PROJ=/short/xf1/test
+PROJ=/short/xf1/Epauc
 JOBS=/short/xf1/src_big/somatic-variation/HPC_jobs
 PICARD="java -jar $HOME/apps/bin/picard.jar" 		#How do I call picard on this system?
 GATK=/short/xf1/src_big/GATK/GenomeAnalysisTK.jar #Location of your GATK jar
-NODES=80						# the number of single thread nodes to be used by scatter-gather GATK processes
+NODES=99						# the number of single thread nodes to be used by scatter-gather GATK processes
 TMP=${PROJ}/tmp
 BEDFILE=""
 NUMNS=30
-OUTFILE=${PROJ}/GATK_master_fulltest_out.vcf
+OUTFILE=${PROJ}/GATK_master_full_out.vcf
 
 ### parameters received from -v
 REFERENCEFILE=$REF
@@ -41,6 +42,8 @@ SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo I={})
 OUTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf out_calls_XXX)
 RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXX)
+#MAINCHROMINTERVALS=$(echo "Chr01 Chr02 Chr03 Chr04 Chr05 Chr06 Chr07 Chr08 Chr09 Chr10 Chr11" |  tr ' ' '\n' | xargs -i echo -L {})
+MAINCHROMINTERVALS="-L Chr01 -L Chr02 -L Chr03 -L Chr04 -L Chr05 -L Chr06 -L Chr07 -L Chr08 -L Chr09 -L Chr10 -L Chr11"
 TOUCHDIR1=$(mktemp -d --tmpdir=$TMPDIR GATK_scatter1_done_XXX)
 TOUCHDIR2=$(mktemp -d --tmpdir=$TMPDIR GATK_scatter2_done_XXX)
 
@@ -57,8 +60,11 @@ fi
 ### SCATTER (i.e. divide up the genome for parallelisation)
 echo "$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}"
 $PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}        #very quick
-echo "IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}"
-$PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}             #very quick. For each core it makes a tmp directory containing a subset of intervals.
+
+# remove intervals that are outside of the 11 main chromosomes
+cat <(head -n 1 ${FULLINTERVALS}) <(grep 'Chr' ${FULLINTERVALS}) > $TMPDIR/chroms.fullintervals.interval_list
+echo "IntervalListTools I=${TMPDIR}/chroms.fullintervals.interval_list SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}"
+$PICARD IntervalListTools I=${TMPDIR}/chroms.fullintervals.interval_list SCATTER_COUNT=$NODES O=${SCATTEREDINTERVALDIR}             #very quick. For each core it makes a tmp directory containing a subset of intervals.
            
 # run GATK for each scatter interval
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list' | sort)
@@ -85,17 +91,18 @@ done
 
 ### GATHER
 echo "$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}"
-$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
+$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT} TMP_DIR=${PBS_JOBFS}
+sleep 1
 rm $SCATTEREDFIRSTCALLS 
 rm $SORTEDFIRSTCALLS.idx
 
 ### Recalibrate base calls
-echo "${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -L ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE"
-java -Xmx24G -jar ${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -L ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
+echo "${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE"
+java -Xmx30G -jar ${GATK} -T BaseRecalibrator -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
 #rm $SORTEDFIRSTCALLS
 
 echo "${GATK} -T PrintReads -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM"
-java -Xmx24G -jar ${GATK} -T PrintReads -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM
+java -Xmx30G -jar ${GATK} -T PrintReads -nct $PBS_NCPUS -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM
 #rm $DEDUPLIFIEDBAM $RECALDATATABLE
 
 ### SCATTER again
@@ -122,6 +129,6 @@ done
 #rm $SCATTEREDINTERVALS 
 #rm $RECALIBRATEDBAM
 echo "$PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}"
-$PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}
+$PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT} TMP_DIR=${PBS_JOBFS}
 
 exit 0

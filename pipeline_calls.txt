@@ -3,3 +3,16 @@
 
 # mark duplicates for a directory of BAMs with picard
  bash gatkcaller.sh -t 1 -r /short/xf1/Epauc/pseudoref/RB7_5.fa -i /short/xf1/Epauc/bam
+
+# merge deduped BAMs into one prior to variant calling. Takes about 1hr on one 16 core node
+ samtools merge -c -p -@ 2 /short/xf1/Epauc/bam/dedup/merged/dedup_merged.bam $(find /short/xf1/Epauc/bam/dedup/ -name "*.bam")
+
+# index the merged bam
+picard.jar BuildBamIndex INPUT=/short/xf1/Epauc/bam/dedup/merged/dedup_merged.bam
+
+# remove all minor scaffolds from pseudo reference
+samtools faidx  /short/xf1/Epauc/pseudoref/RB7_5.fa Chr01 Chr02 Chr03 Chr04 Chr05 Chr06 Chr07 Chr08 Chr09 Chr10 Chr11 > /short/xf1/Epauc/pseudoref/RB7_5_chroms.fa
+
+# call variants (final call, not iterative pseudo reference call). Use a reference with only the first 11 chroms
+# qsub HPC_jobs/GATK_master.job -v <REF> <BAM>
+qsub HPC_jobs/GATK_master.job -v  REF=/short/xf1/Epauc/pseudoref/RB7_5_chroms.fa,BAM=/short/xf1/test/bam/dedup/merge/dedup_merged.bam HPC_jobs/GATK_master.job
