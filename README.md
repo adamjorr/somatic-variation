@@ -124,10 +124,15 @@ bash gatkcaller.sh -r reference.fa -i data.bam -o variants.vcf
 Filtering Results
 ------------------
 To filter our VCF using any replication information, use `filt_with_replicates.pl`.
+Note that this script assumes that you have your VCF file ordered such that the replicates are next to each other. For example, -g 3 will assume that the first 3 samples are replicates of one another.
 
 ```bash
 perl filt_with_replicates.pl <variants.vcf >filtered.vcf
 ```
+
+Now we can filter our VCF with various depth and heterozygosity filters like using the `filervcf.sh` file.
+
+This gives us a filtered VCF of our 'best' variant calls. 
 
 Building A Tree
 ---------------
