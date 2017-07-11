@@ -138,7 +138,6 @@ def main():
 		# if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist) #turn baselist into 2 baselists, expanding using IUPAC notation
-		print baselist, "\n", c, "\n", v, "\n"
 		if not is_single_mutation(c,v): continue
 		
 		if variablesites:
