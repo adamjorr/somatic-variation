@@ -154,7 +154,7 @@ def main():
 
 	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]
 	newalnobj = MultipleSeqAlignment(newseqobjs)
-	# newalnobj = remove_duplicate_seqs(newalnobj)
+	newalnobj = remove_duplicate_seqs(newalnobj)
 	AlignIO.write(newalnobj,fileout,outtype)
 
 if __name__ == '__main__':
