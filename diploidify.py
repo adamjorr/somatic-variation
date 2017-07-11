@@ -67,11 +67,12 @@ def is_single_mutation(constantlist, variedlist):
 	if unique_list_size(cbases) == unique_list_size(vbases) == 1: return True
 	return False
 
+#TODO: too much indentation and confusing loops
 def diploidify(baselist):
 	"""Makes every site 2 sites based on IUPAC codes."""
-	constant = [iupac[baselist[0]][0]]
-	varied = [iupac[baselist[0]][1]]
-	for b in range(1,len(baselist)):
+	constant = list()
+	varied = list()
+	for b in range(0,len(baselist)):
 		base = baselist[b]
 		if base == '.' or base =='-':
 			constant.extend('-')
@@ -79,16 +80,19 @@ def diploidify(baselist):
 		else:
 			#We need to be careful about this to account for something like M -> S mutant (A/C -> C/G)
 			#So we make a nonvariable haplotype + a variable haplotype
-			if constant[0] == iupac[base][0]:
+			if len(constant) > 0:
+				if constant[0] == iupac[base][0]:
+					constant.extend(iupac[base][0])
+					varied.extend(iupac[base][1])
+				else:
+					constant.extend(iupac[base][1])
+					varied.extend(iupac[base][0])
+			else:
 				constant.extend(iupac[base][0])
 				varied.extend(iupac[base][1])
-			else:
-				constant.extend(iupac[base][1])
-				varied.extend(iupac[base][0])
+
 	if unique_list_size(constant) != 1:
-		dummy = varied
-		varied = constant
-		constant = dummy
+		constant, varied = varied, constant #switch variables
 	return constant,varied
 
 def remove_duplicate_seqs(alignment):
@@ -134,6 +138,7 @@ def main():
 		# if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist) #turn baselist into 2 baselists, expanding using IUPAC notation
+		print baselist, "\n", c, "\n", v, "\n"
 		if not is_single_mutation(c,v): continue
 		
 		if variablesites:
@@ -150,7 +155,7 @@ def main():
 
 	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]
 	newalnobj = MultipleSeqAlignment(newseqobjs)
-	newalnobj = remove_duplicate_seqs(newalnobj)
+	# newalnobj = remove_duplicate_seqs(newalnobj)
 	AlignIO.write(newalnobj,fileout,outtype)
 
 if __name__ == '__main__':
