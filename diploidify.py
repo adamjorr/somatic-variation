@@ -14,6 +14,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Alphabet import IUPAC
 from Bio.Align import MultipleSeqAlignment
+import vcf
 
 
 iupac = {
@@ -114,18 +115,10 @@ def remove_nonvariable_sites(baselist):
 	else:
 		return baselist
 
-def main():
-	parser = argparse.ArgumentParser(description="Create explicit alignment from a diploid sequence that utilizes IUPAC codes")
-	parser.add_argument("-i","--input", help="input file (default: stdin)")
-	parser.add_argument("-t","--type", help="filetype (default: fasta)", default="fasta")
-	parser.add_argument("-o","--output",help="output file (default: stdout)")
-	parser.add_argument("-p","--outtype",help="output filetype (default: fasta)", default="fasta")
-	parser.add_argument("-v","--variable",help="only output variable sites",action="store_true")
-	parser.add_argument("-s","--skip",help="keep single-letter notation but keep other checks",action="store_true")
-	args = parser.parse_args()
+def filter_alignment(args):
+	filein = args.input
+	fileout = args.output
 	filetype = args.type
-	filein = args.input or sys.stdin
-	fileout = args.output or sys.stdout
 	outtype = args.outtype
 	variablesites = args.variable
 	skip = args.skip
@@ -156,6 +149,56 @@ def main():
 	newalnobj = MultipleSeqAlignment(newseqobjs)
 	newalnobj = remove_duplicate_seqs(newalnobj)
 	AlignIO.write(newalnobj,fileout,outtype)
+
+def filter_vcf(args):
+	fd = args.input
+	if fd != sys.stdin:
+		vcf_reader = vcf.Reader(filename=fd)
+	else:
+		vcf_reader = vcf.Reader(fsock=fd)
+	of = args.output
+	if of != sys.stdout:
+		vcf_writer = vcf.Writer(open(of,'w'),vcf_reader)
+	else:
+		vcf_writer = vcf.Writer(of,vcf_reader)
+
+	for record in vcf_reader:
+		gts = list()
+		for sample in record.samples:
+			gts.append(sample.gt_bases)
+		if None in gts: continue
+		if unique_list_size(gts) != 2: continue #this removes nonvariant sites + multiple mutations
+		vcf_writer.write_record(record)
+	vcf_writer.close()
+
+
+def argparser():
+	parser = argparse.ArgumentParser(description=
+		"""
+		Create explicit alignment from a diploid sequence that utilizes IUPAC codes.
+		Will remove sequences that are identical to previous sequences in the alignment.
+		Will also remove any site that is not biallelic.
+		Use "-t vcf" to perform these checks and remove nonvariable sites from a vcf.
+		In VCF mode, this program will only output a vcf.
+		""")
+	parser.add_argument("-i","--input", help="input file (default: stdin)")
+	parser.add_argument("-t","--type", help="filetype (default: fasta). Any Biopython-compatible alignment format or \"vcf\".", default="fasta")
+	parser.add_argument("-o","--output",help="output file (default: stdout)")
+	parser.add_argument("-p","--outtype",help="output filetype (default: same as --type)")
+	parser.add_argument("-v","--variable",help="only output variable sites",action="store_true")
+	parser.add_argument("-s","--skip",help="keep single-letter notation but keep other checks",action="store_true")
+	args = parser.parse_args()
+	if not args.input: args.input = sys.stdin
+	if not args.output: args.output = sys.stdout
+	if not args.outtype: args.outtype = args.type
+	return args
+
+def main():
+	args = argparser()
+	if args.type != "vcf":
+		filter_alignment(args)
+	else:
+		filter_vcf(args)
 
 if __name__ == '__main__':
 	main()
