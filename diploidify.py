@@ -152,21 +152,21 @@ def filter_alignment(args):
 
 def filter_vcf(args):
 	fd = args.input
-	if fd != sys.stdin:
-		vcf_reader = vcf.Reader(filename=fd)
-	else:
-		vcf_reader = vcf.Reader(fsock=fd)
 	of = args.output
-	if of != sys.stdout:
-		vcf_writer = vcf.Writer(open(of,'w'),vcf_reader)
-	else:
-		vcf_writer = vcf.Writer(of,vcf_reader)
+	vcf_reader = (vcf.Reader(fsock=fd) if fd == sys.stdin else vcf.Reader(filename=fd))
+	vcf_writer = (vcf.Writer(of,vcf_reader) if of == sys.stdout else vcf.Writer(open(of,'w'),vcf_reader))
 
 	for record in vcf_reader:
 		gts = list()
 		for sample in record.samples:
-			gts.append(sample.gt_bases)
-		if None in gts: continue
+			sepchar = ('/' if not sample.phased else '|') #replacing this is not strictly necessary, but makes sense to do
+			bases = sample.gt_bases
+			if bases != None:
+				gts.append(''.join(sorted(bases.replace(sepchar,'')))) #sort to ensure A/T is not different from T/A
+			else:
+				gts.append(None)
+				break
+		if gts[-1] is None: continue
 		if unique_list_size(gts) != 2: continue #this removes nonvariant sites + multiple mutations
 		vcf_writer.write_record(record)
 	vcf_writer.close()
