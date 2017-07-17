@@ -68,33 +68,36 @@ def is_single_mutation(constantlist, variedlist):
 	if unique_list_size(cbases) == unique_list_size(vbases) == 1: return True
 	return False
 
-#TODO: too much indentation and confusing loops
 def diploidify(baselist):
 	"""Makes every site 2 sites based on IUPAC codes."""
-	constant = list()
-	varied = list()
-	for b in range(0,len(baselist)):
-		base = baselist[b]
-		if base == '.' or base =='-':
-			constant.extend('-')
-			varied.extend('-')
-		else:
-			#We need to be careful about this to account for something like M -> S mutant (A/C -> C/G)
-			#So we make a nonvariable haplotype + a variable haplotype
-			if len(constant) > 0:
-				if constant[0] == iupac[base][0]:
-					constant.extend(iupac[base][0])
-					varied.extend(iupac[base][1])
-				else:
-					constant.extend(iupac[base][1])
-					varied.extend(iupac[base][0])
-			else:
-				constant.extend(iupac[base][0])
-				varied.extend(iupac[base][1])
+	dipl = [iupac[b.upper()] for b in baselist]
+	return create_cv(dipl)
 
+def create_cv(bases):
+	"""Turns a list of diploid bases into 2 lists, attempting to create one constant and one varied (but no promises)"""
+	constant = [bases[0][0]]
+	varied = [bases[0][1]]
+	for b in bases[1:]:
+		b.replace('.','-')# standardize gaps
+		if b[0] == constant[0]:
+			constant.extend(b[0])
+			varied.extend(b[1])
+		else:
+			constant.extend(b[1])
+			varied.extend(b[0])
 	if unique_list_size(constant) != 1:
 		constant, varied = varied, constant #switch variables
-	return constant,varied
+	return constant, varied
+
+def filter_cv(c, v, args):
+	"""Filter constant and variable sites according to arguments"""
+	if not is_single_mutation(c,v): return None, None
+	if args.variable:
+		c = remove_nonvariable_sites(c)
+		v = remove_nonvariable_sites(v)
+		if c == v == None: return None, None
+	return c, v
+
 
 def remove_duplicate_seqs(alignment):
 	"""Remove duplicate sequences in the alignment; the replicates will all have identical sequences"""
@@ -109,11 +112,17 @@ def remove_duplicate_seqs(alignment):
 	return MultipleSeqAlignment(returnseqs)
 
 def remove_nonvariable_sites(baselist):
-	"""Takes a baselist and returns an empty list if it is nonvariable, otherwise returns it"""
+	"""Takes a baselist and returns None if it is nonvariable, otherwise returns it"""
 	if unique_list_size(non_gap_bases(baselist)) == 1:
-		return [''] * len(baselist)
+		return None
 	else:
 		return baselist
+
+def combine_cv(c,v):
+	if c and v:
+		return [c[k] + v[k] for k in range(0,len(c))]
+	else:
+		return (v if v else c)
 
 def filter_alignment(args):
 	filein = args.input
@@ -128,21 +137,21 @@ def filter_alignment(args):
 	for i in range(0,seqs.get_alignment_length()):
 		baselist = list(seqs[:,i])
 		if not is_biallelic(baselist): continue
-		# if not is_valid_site(baselist): continue
 		#Since we have a maximum of 1 mutation, at ambiguous sites we have a constant site and a variable site
 		c, v = diploidify(baselist) #turn baselist into 2 baselists, expanding using IUPAC notation
-		if not is_single_mutation(c,v): continue
+		# if not is_single_mutation(c,v): continue
 		
-		if variablesites:
-			c = remove_nonvariable_sites(c)
-			v = remove_nonvariable_sites(v)
-			if c == v == [''] * len(c): continue
-				
+		# if variablesites:
+		# 	c = remove_nonvariable_sites(c)
+		# 	v = remove_nonvariable_sites(v)
+		# 	if c == v == [''] * len(c): continue
+		c, v = filter_cv(c,v,args)
+		if c == v == None: continue		
 		combined = list()
 		if skip:
 			combined = baselist
 		else:
-			combined = [c[k] + v[k] for k in range(0,len(c))]
+			combined = combine_cv(c,v)
 		newalignment = [newalignment[j] + combined[j] for j in range(0,len(combined))]
 
 	newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=seqs[l].id, description='') for l in range(0,len(seqs))]
@@ -153,8 +162,13 @@ def filter_alignment(args):
 def filter_vcf(args):
 	fd = args.input
 	of = args.output
+	ot = args.outtype
 	vcf_reader = (vcf.Reader(fsock=fd) if fd == sys.stdin else vcf.Reader(filename=fd))
-	vcf_writer = (vcf.Writer(of,vcf_reader) if of == sys.stdout else vcf.Writer(open(of,'w'),vcf_reader))
+	if ot == "vcf":
+		vcf_writer = (vcf.Writer(of,vcf_reader) if of == sys.stdout else vcf.Writer(open(of,'w'),vcf_reader))
+	else:
+		newalignment = None
+		samplenames = None
 
 	for record in vcf_reader:
 		gts = list()
@@ -162,14 +176,30 @@ def filter_vcf(args):
 			sepchar = ('/' if not sample.phased else '|') #replacing this is not strictly necessary, but makes sense to do
 			bases = sample.gt_bases
 			if bases != None:
-				gts.append(''.join(sorted(bases.replace(sepchar,'')))) #sort to ensure A/T is not different from T/A
+				gts.append(''.join(bases.replace(sepchar,''))) #sort to ensure A/T is not different from T/A
 			else:
 				gts.append(None)
 				break
 		if gts[-1] is None: continue
-		if unique_list_size(gts) != 2: continue #this removes nonvariant sites + multiple mutations
-		vcf_writer.write_record(record)
-	vcf_writer.close()
+		c,v = create_cv(gts)
+		c,v = filter_cv(c,v,args)
+		if c == v == None: continue
+		if ot == "vcf":
+			vcf_writer.write_record(record)
+		else:
+			combined = combine_cv(c,v)
+			if not newalignment:
+				newalignment = [''] * len(record.samples)
+				samplenames = [x.sample for x in record.samples]
+			newalignment = [newalignment[j] + combined[j] for j in range(0,len(combined))]
+
+	if ot == "vcf":
+		vcf_writer.close()
+	else:
+		newseqobjs = [SeqRecord(Seq(newalignment[l], IUPAC.unambiguous_dna), id=samplenames[l], description='') for l in range(0,len(newalignment))]
+		newalnobj = MultipleSeqAlignment(newseqobjs)
+		newalnobj = remove_duplicate_seqs(newalnobj)
+		AlignIO.write(newalnobj,of,ot)
 
 
 def argparser():
