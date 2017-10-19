@@ -26,11 +26,11 @@ BAMDIR=/short/xf1/Emel/induce_mutations
 
 usage()
 {
-        echo "-b <bam file>.    The BAM generated for this sample when its original FASTQ was aligned to. FULL path"
+        echo "-b <bam file>.    The BAM generated for this sample when its original FASTQ was aligned to. Must have .bai index too. FULL path"
         echo "-f <R1 FASTQ>.    The R1 fastq file. i.e. forward reads from illumina PE sequencing. FULL path. NOT .gz"
         echo "-r <R2 FASTQ>.    The R2 fastq file. i.e. reverse reads from illumina PE sequencing. FULL path. NOT .gz"
-        echo "-m <mutations>.   A tab delimited file of the mutations to induce in this sample's fastq. FULL path"
-        echo "-g <ref genome>.  The reference genome that was used in making the original BAM file. FULL path"
+        echo "-m <mutations>.   A tab delimited file of the mutations to induce in this sample's fastq. FULL path. Expected fields (no headers): CHROM POS REF ALT NEWREF NEWALT"
+        echo "-g <ref genome>.  The reference genome that was used in making the original BAM file. Must have .fai index too. FULL path"
         echo "-o <output dir>.  The output directory for the edited fastq files. FULL path"
 }
 
