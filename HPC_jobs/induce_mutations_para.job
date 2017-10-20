@@ -1,0 +1,52 @@
+#!/bin/bash
+#PBS -P vb2
+#PBS -q expressbw
+#PBS -l walltime=12:00:00
+#PBS -l mem=32GB
+#PBS -l ncpus=28
+#PBS -l wd
+#PBS -l jobfs=40GB
+
+
+# -b <bam file>.    The BAM generated for this sample when its original FASTQ was aligned to. FULL path
+# -f <R1 FASTQ>.    The R1 fastq file. i.e. forward reads from illumina PE sequencing. FULL path. NOT .gz
+# -r <R2 FASTQ>.    The R2 fastq file. i.e. reverse reads from illumina PE sequencing. FULL path. NOT .gz
+# -m <mutations>.   A tab delimited file of the mutations to induce in this sample's fastq. FULL path
+# -g <ref genome>.  The reference genome that was used in making the original BAM file. FULL path
+# -o <output dir>.  The output directory for the edited fastq files. FULL path
+
+cp $BAM ${PBS_JOBFS}/BAM
+cp ${BAM}.bai ${PBS_JOBFS}/BAM.bai
+cp $R1 ${PBS_JOBFS}/R1
+cp $R2 ${PBS_JOBFS}/R2
+cp $REF ${PBS_JOBFS}/REF
+cp ${REF}.fai  ${PBS_JOBFS}/REF.fai
+
+NUMMUT=$(wc -l $MUTFILE | cut -f1 -d' ')
+PERCHUNK=$((${NUMMUT}/${PBS_NCPUS}))
+
+# split the mutations list into small chunks for parellising
+echo "splitting mutations file into chunks"
+split -l $PERCHUNK -d --suffix-length=2 $MUTFILE ${PBS_JOBFS}/$(basename $MUTFILE).chunk
+
+echo "running following chunks in parallel on $PBS_NCPUS CPUS"
+ls ${PBS_JOBFS}/$(basename $MUTFILE).chunk*
+
+if [ ! -d "$OUTDIR" ]; then
+	mkdir $OUTDIR
+fi
+
+# run the main gruntwork
+ls ${PBS_JOBFS}/$(basename $MUTFILE).chunk* | parallel --joblog $OUTDIR/log -j $(($PBS_NCPUS)) /short/xf1/src_big/somatic-variation/misc/induce_mutations4.sh \
+ -b ${PBS_JOBFS}/BAM -f ${PBS_JOBFS}/R1 -r ${PBS_JOBFS}/R2 -m {} -g ${PBS_JOBFS}/REF -o $OUTDIR
+#bash /short/xf1/src_big/somatic-variation/misc/induce_mutations4.sh -b $BAM -f $R1 -r $R2 -m $MUTFILE -g $REF -o $OUTDIR
+
+
+# concatonate the sed terms from each chunk into one long sed script
+
+cat ${OUTDIR}/*.R1.sed > ${OUTDIR}/$(basename $BAM).R1.sed
+cat ${OUTDIR}/*.R2.sed > ${OUTDIR}/$(basename $BAM).R2.sed
+
+# perform the actual editing of the fastq files
+parallel -j 2 sed -f {1} {2} '>' {1.}.mut.fastq  ::: ${OUTDIR}/$(basename $BAM).R*.sed :::+ ${PBS_JOBFS}/R*
+
