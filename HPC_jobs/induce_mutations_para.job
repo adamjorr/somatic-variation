@@ -1,6 +1,6 @@
 #!/bin/bash
-#PBS -P vb2
-#PBS -q expressbw
+#PBS -P xf1
+#PBS -q normalbw
 #PBS -l walltime=12:00:00
 #PBS -l mem=32GB
 #PBS -l ncpus=28
@@ -37,7 +37,7 @@ if [ ! -d "$OUTDIR" ]; then
 fi
 
 # run the main gruntwork
-ls ${PBS_JOBFS}/$(basename $MUTFILE).chunk* | parallel --joblog $OUTDIR/log -j $(($PBS_NCPUS)) /short/xf1/src_big/somatic-variation/misc/induce_mutations4.sh \
+ls ${PBS_JOBFS}/$(basename $MUTFILE).chunk* | parallel --joblog $OUTDIR/log -j $(($PBS_NCPUS)) /short/xf1/src_big/somatic-variation/misc/induce_mutations.sh \
  -b ${PBS_JOBFS}/BAM -f ${PBS_JOBFS}/R1 -r ${PBS_JOBFS}/R2 -m {} -g ${PBS_JOBFS}/REF -o $OUTDIR
 #bash /short/xf1/src_big/somatic-variation/misc/induce_mutations4.sh -b $BAM -f $R1 -r $R2 -m $MUTFILE -g $REF -o $OUTDIR
 
