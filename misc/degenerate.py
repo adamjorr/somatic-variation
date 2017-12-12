@@ -26,7 +26,6 @@ def degenerate_pos(seq, table = 1):
         if (len(codon) == 3):
             for j in range(3):
                 if is_degenerate(j,codon,table):
-                    print codon, j, set(alt_AAs(j,codon,table))
                     data.append(i + j)
     return data
 
@@ -65,14 +64,12 @@ def findSites(bedfilename, reffilename, strand):
     """
     sites = []
     for record in getCDSs(bedfilename, reffilename, strand):
-        print record
         pos = degenerate_pos(record.seq)
         refchr, refpos = string.split(record.id, ':', 1)
         refpos, _ = string.split(refpos, '-', 1)
         if strand == "+":
             sites.extend([refchr + ':' + str(int(refpos)+k) for k in pos])
         else:
-            print refpos, len(record.seq), pos
             sites.extend([refchr + ':' + str(int(refpos)+(len(record.seq) - k - 1)) for k in pos])
     return sites
 
