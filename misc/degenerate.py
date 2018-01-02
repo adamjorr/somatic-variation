@@ -1,28 +1,32 @@
-import pybedtools
+#!/usr/bin/env python2
 from pybedtools import BedTool
+import pybedtools
 from Bio.Data.CodonTable import unambiguous_dna_by_id
 from Bio import SeqIO
 import argparse
+import sys
+import string
 
 def alt_AAs(site, codon, tab):
     """
     site = one of (0,1,2)
     """
     table = unambiguous_dna_by_id[tab]
-    allcodons = [codon[site]=k for k in ['a','t','c','g']]
-    return [table[c] for c in altcodons]
+    altcodons = [ codon[:site] + k + codon[site+1:] for k in ['A','T','C','G'] ]
+    return [table.forward_table[c] if c in table.forward_table else '*' for c in altcodons]
 
 def is_degenerate(site, codon, table):
-    return (len(unique(alt_AAs(site,codon,table))) == 1)
+    return (len(set(alt_AAs(site,codon,table))) == 1)
 
-def degenerate_pos(seq, table = "Standard"):
+def degenerate_pos(seq, table = 1):
     """Get 1-based positions consisting of the x-fold degenerated codons only."""
-    sites = []
+    data = []
     for i in range(0, len(seq), 3):
-        codon = seq[i:i + 3].tostring()
-        for j in range(3):
-            if is_degenerate(j,codon,table):
-                data.append(i + j + 1)
+        codon = str(seq[i:i + 3])
+        if (len(codon) == 3):
+            for j in range(3):
+                if is_degenerate(j,codon,table):
+                    data.append(i + j)
     return data
 
 def argparser():
@@ -48,7 +52,7 @@ def getCDSs(bedfilename, reffilename, strand):
     """
     return iterator of coding sequences
     """
-    bed = pybedtools.BedTool(bedfilename)
+    bed = BedTool(bedfilename)
     bed = bed.filter(lambda x: x.strand == strand)
     fasta = reffilename
     bed = bed.sequence(fi=fasta, s=True)
@@ -56,25 +60,31 @@ def getCDSs(bedfilename, reffilename, strand):
 
 def findSites(bedfilename, reffilename, strand):
     """
-    if reverse strand, absolute position is len(seq) + 1 - pos
+    if reverse strand, absolute position is len(seq) - pos
     """
     sites = []
     for record in getCDSs(bedfilename, reffilename, strand):
         pos = degenerate_pos(record.seq)
         refchr, refpos = string.split(record.id, ':', 1)
+        refpos, _ = string.split(refpos, '-', 1)
         if strand == "+":
-            sites.extend([refchr + ':' + (int(refpos)+k).tostring() for k in pos])
+            sites.extend([refchr + ':' + str(int(refpos)+k) for k in pos])
         else:
-            sites.extend([refchr + ':' + (int(refpos)+(len(record.seq)+1 - k)) for k in pos])
+            sites.extend([refchr + ':' + str(int(refpos)+(len(record.seq) - k - 1)) for k in pos])
     return sites
 
 def main():
     args = argparser()
     forwardsites = findSites(args.input, args.reference, "+")
     revsites = findSites(args.input, args.reference, "-")
-    with open(args.output,'wb') as of:
+    try:
+        with open(args.output,'wb') as of:
+            for l in forwardsites + revsites:
+                of.write(l + "\n")
+    except TypeError:
         for l in forwardsites + revsites:
-            of.write(l + "\n")
+            args.output.write(l + "\n")
+    pybedtools.cleanup(remove_all=True)
 
 
 if __name__ == '__main__':
