@@ -19,16 +19,31 @@ def load_all_muts():
 		for l in fh:
 			outline = generate_table_line(l)
 
+def position_depth(samfile, chr, position):
+	regionstr = str(chr) + str(position)
+	for col in samfile.pileup(regionstr):
+		return col.n #just first position in pileup
+
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
 """
-def generate_table_line(line):
-	l = line.split()
+def generate_table_line(line, muts, vcf, sam):
+	l = line.rstrip().split()
 	loc = l[0:1]
 	gt = l[2:3]
 	togt = l[4:5]
+	depth = position_depth(sam, l[0], l[1])
+	mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i]]
+	
 
-	return loc[0], loc[1], str.join(gt), str.join(togt), 
+	recovered = False
+	if loc in vcfloc:
+		if set(vcfgt) == set(togt):
+			recovered = True
+
+
+
+	return loc[0], loc[1], ''.join(gt), ''.join(togt), ','.join(mutated_samples), 
 
 def main():
     #open all mut files and load into list
