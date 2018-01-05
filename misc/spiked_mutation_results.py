@@ -16,9 +16,9 @@ def load_vcf():
     vcfreader = vcf.Reader(filename = vcffile)
     vcflocs = dict()
     for record in vcfreader:
-        d = vcflocs.setdefault(record.chrom, dict()) #dictionary with vcflocs{chr} = {pos : record}
+        d = vcflocs.setdefault(record.CHROM, dict()) #dictionary with vcflocs{chr} = {pos : record}
         d[record.pos] = record
-        vcflocs[record.chrom] = d
+        vcflocs[record.CHROM] = d
     return vcflocs
 
 def load_sam():
