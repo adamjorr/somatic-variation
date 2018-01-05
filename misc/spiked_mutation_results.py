@@ -26,9 +26,11 @@ def load_sam():
     return pysam.AlignmentFile(samfile, "rb")
 
 def position_depth(samfile, chr, position):
-    regionstr = str(chr) + str(position)
-    for col in samfile.pileup(regionstr):
-        return col.n #just first position in pileup
+    if str(chr) in samfile.references:
+        regionstr = str(chr) + str(position)
+        for col in samfile.pileup(regionstr):
+            return col.n #just first position in pileup
+    return 0
 
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
