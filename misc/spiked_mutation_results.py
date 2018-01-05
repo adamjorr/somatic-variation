@@ -1,5 +1,7 @@
 #!/usr/bin/env python2
 import pysam
+import vcf
+import gzip
 
 def load_muts():
 	sample_files = ["mut_files/mut_M" + str(k) + ".txt" for k in range(1,9)] #get every file
@@ -11,13 +13,18 @@ def load_muts():
 	return muts #a list of lists of lists
 
 def load_vcf():
+	vcffile = "repfiltered_only_mutated.vcf.gz"
+	vcf = vcf.Reader(gzip.open(vcffile, 'rb'))
+	vcflocs = dict()
+	for record in vcf:
+		d = vcflocs.setdefault(record.chrom, dict()) #dictionary with vcflocs{chr} = {pos : record}
+		d[record.pos] = record
+		vcflocs[record.chrom] = d
+	return vcflocs
 
-
-def load_all_muts():
-	mutfile = "mut_files/mutfile.txt"
-	with open(mutfile) as fh:
-		for l in fh:
-			outline = generate_table_line(l)
+def load_sam():
+	samfile = "fixed_alignment.bam"
+	return pysam.AlignmentFile(samfile, "rb")
 
 def position_depth(samfile, chr, position):
 	regionstr = str(chr) + str(position)
@@ -31,23 +38,31 @@ def generate_table_line(line, muts, vcf, sam):
 	l = line.rstrip().split()
 	loc = l[0:1]
 	gt = l[2:3]
-	togt = l[4:5]
+	togt = set(l[4:5])
 	depth = position_depth(sam, l[0], l[1])
 	mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i]]
 	
-
 	recovered = False
-	if loc in vcfloc:
-		if set(vcfgt) == set(togt):
-			recovered = True
+	if loc[0] in vcf:
+		chrd = vcf[loc[0]]
+		if loc[1] in chrd:
+			record = chrd[loc[1]]
+			vcfgt = [set(record.genotype(s + "a").gt_bases.split("/")) for s in mutated_samples] # add a because the samples are M1a, M2a, etc.
+			eq = [g == togt for g in vcfgt] #are all the genotypes equal to the togt?
+			if False not in eq: #if so, we recovered the mutation
+				recovered = True
 
-
-
-	return loc[0], loc[1], ''.join(gt), ''.join(togt), ','.join(mutated_samples), 
+	return loc[0], loc[1], ''.join(gt), ''.join(togt), depth, ','.join(mutated_samples), recovered
 
 def main():
-    #open all mut files and load into list
-    #iterate through full list and generate table
+    muts = load_muts() #open all mut files and load into list
+	vcf = load_vcf()
+	sam = load_sam()
+
+	mutfile = "mut_files/mutfile.txt" #iterate through full list and generate table
+	with open(mutfile) as fh:
+		for l in fh:
+			outline = generate_table_line(l, muts, vcf, sam)
 
 if __name__ == '__main__':
     main()
