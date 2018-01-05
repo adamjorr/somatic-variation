@@ -17,7 +17,7 @@ def load_vcf():
     vcflocs = dict()
     for record in vcfreader:
         d = vcflocs.setdefault(record.CHROM, dict()) #dictionary with vcflocs{chr} = {pos : record}
-        d[record.pos] = record
+        d[record.POS] = record
         vcflocs[record.CHROM] = d
     return vcflocs
 
