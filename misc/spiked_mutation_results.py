@@ -27,7 +27,7 @@ def load_sam():
 
 def position_depth(samfile, chr, position):
     regionstr = str(chr) + ':' + str(position)
-    for col in samfile.pileup(regionstr):
+    for col in samfile.pileup(region = regionstr):
         return col.n #just first position in pileup
 
 """
