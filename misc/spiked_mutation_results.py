@@ -51,7 +51,7 @@ def generate_table_line(line, muts, vcf, sam):
             if False not in eq: #if so, we recovered the mutation
                 recovered = True
 
-    return loc[0], loc[1], ''.join(gt), ''.join(togt), depth, ','.join(mutated_samples), recovered
+    return loc[0], loc[1], ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered)
 
 def main():
     muts = load_muts() #open all mut files and load into list
@@ -59,6 +59,7 @@ def main():
     sam = load_sam()
 
     mutfile = "mut_files/mutfile.txt" #iterate through full list and generate table
+    print "\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered"])
     with open(mutfile) as fh:
         for l in fh:
             outline = generate_table_line(l, muts, vcf, sam)
