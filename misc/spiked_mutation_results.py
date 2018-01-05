@@ -44,18 +44,12 @@ def generate_table_line(line, muts, vcf, sam):
     recovered = False
     if loc[0] in vcf:
         chrd = vcf[loc[0]]
-        try:
-            if loc[1] in chrd:
-                record = chrd[loc[1]]
-                vcfgt = [set(record.genotype(s + "a").gt_bases.split("/")) for s in mutated_samples] # add a because the samples are M1a, M2a, etc.
-                eq = [g == togt for g in vcfgt] #are all the genotypes equal to the togt?
-                if False not in eq: #if so, we recovered the mutation
-                    recovered = True
-        except IndexError:
-            print line;
-            print l;
-            print loc;
-            raise
+        if loc[1] in chrd:
+            record = chrd[loc[1]]
+            vcfgt = [set(record.genotype(s + "a").gt_bases.split("/")) for s in mutated_samples] # add a because the samples are M1a, M2a, etc.
+            eq = [g == togt for g in vcfgt] #are all the genotypes equal to the togt?
+            if False not in eq: #if so, we recovered the mutation
+                recovered = True
 
     return loc[0], loc[1], ''.join(gt), ''.join(togt), depth, ','.join(mutated_samples), recovered
 
@@ -68,6 +62,7 @@ def main():
     with open(mutfile) as fh:
         for l in fh:
             outline = generate_table_line(l, muts, vcf, sam)
+            print "\t".join(outline)
 
 if __name__ == '__main__':
     main()
