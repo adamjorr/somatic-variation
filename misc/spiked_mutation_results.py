@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 import pysam
 import vcf
-import gzip
 
 def load_muts():
     sample_files = ["mut_files/mut_M" + str(k) + ".txt" for k in range(1,9)] #get every file
@@ -14,7 +13,7 @@ def load_muts():
 
 def load_vcf():
     vcffile = "repfiltered_only_mutated.vcf.gz"
-    vcfreader = vcf.Reader(gzip.open(vcffile, 'rb'))
+    vcfreader = vcf.Reader(filename = vcffile)
     vcflocs = dict()
     for record in vcfreader:
         d = vcflocs.setdefault(record.chrom, dict()) #dictionary with vcflocs{chr} = {pos : record}
