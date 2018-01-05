@@ -42,7 +42,7 @@ def generate_table_line(line, muts, vcf, sam):
     gt = l[2:3]
     togt = set(l[4:5])
     depth = position_depth(sam, l[0], l[1])
-    mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i]]
+    mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i-1]] #sample names are 1-based
     
     recovered = False
     if loc[0] in vcf:
