@@ -14,9 +14,9 @@ def load_muts():
 
 def load_vcf():
     vcffile = "repfiltered_only_mutated.vcf.gz"
-    vcf = vcf.Reader(gzip.open(vcffile, 'rb'))
+    vcfreader = vcf.Reader(gzip.open(vcffile, 'rb'))
     vcflocs = dict()
-    for record in vcf:
+    for record in vcfreader:
         d = vcflocs.setdefault(record.chrom, dict()) #dictionary with vcflocs{chr} = {pos : record}
         d[record.pos] = record
         vcflocs[record.chrom] = d
