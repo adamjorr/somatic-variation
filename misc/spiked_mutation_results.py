@@ -7,7 +7,7 @@ def load_muts():
     muts = []
     for fn in sample_files:
         with open(fn) as fh:
-            d = [l.split()[0:2] for l in fh] #a list of every [scaffold,site] in the sample
+            d = [[l.split()[0], int(l.split()[1])] for l in fh] #a list of every [scaffold,site] in the sample
             muts.append(d)
     return muts #a list of lists of lists
 
@@ -35,7 +35,7 @@ scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samp
 """
 def generate_table_line(line, muts, vcf, sam):
     l = line.rstrip().split()
-    loc = l[0:2]
+    loc = [l[0], int(l[1])]
     gt = l[2:4]
     togt = set(l[4:6])
     depth = position_depth(sam, l[0], l[1])
@@ -51,7 +51,7 @@ def generate_table_line(line, muts, vcf, sam):
             if False not in eq: #if so, we recovered the mutation
                 recovered = True
 
-    return loc[0], loc[1], ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered)
+    return loc[0], str(loc[1]), ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered)
 
 def main():
     muts = load_muts() #open all mut files and load into list
