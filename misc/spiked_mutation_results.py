@@ -52,7 +52,7 @@ def generate_table_line(line, muts, vcf, sam):
                 vcfgt = record.genotype(s + "a").gt_bases # add a because the samples are M1a, M2a, etc.
                 if vcfgt == None:
                     break
-                vcfg = set(gt.split("/"))
+                vcfg = set(vcfgt.split("/"))
                 if vcfg != togt:
                     break
             else: #if we make it through the loop, we recovered the mutation
