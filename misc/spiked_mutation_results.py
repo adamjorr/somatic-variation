@@ -48,9 +48,14 @@ def generate_table_line(line, muts, vcf, sam):
         chrd = vcf[loc[0]]
         if loc[1] in chrd:
             record = chrd[loc[1]]
-            vcfgt = [set(record.genotype(s + "a").gt_bases.split("/")) for s in mutated_samples] # add a because the samples are M1a, M2a, etc.
-            eq = [g == togt for g in vcfgt] #are all the genotypes equal to the togt?
-            if False not in eq: #if so, we recovered the mutation
+            for s in mutated_samples:
+                gt = record.genotype(s + "a").gt_bases # add a because the samples are M1a, M2a, etc.
+                if gt == None:
+                    break
+                g = set(gt.split("/"))
+                if g != togt:
+                    break
+            else: #if we make it through the loop, we recovered the mutation
                 recovered = True
 
     return loc[0], str(loc[1]), ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered)
