@@ -40,7 +40,9 @@ def generate_table_line(line, muts, vcf, sam):
     togt = set(l[4:6])
     depth = position_depth(sam, l[0], l[1])
     mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i-1]] #sample names are 1-based
-    
+    if mutated_samples == []:
+        return None
+
     recovered = False
     if loc[0] in vcf:
         chrd = vcf[loc[0]]
@@ -63,7 +65,8 @@ def main():
     with open(mutfile) as fh:
         for l in fh:
             outline = generate_table_line(l, muts, vcf, sam)
-            print "\t".join(outline)
+            if outline != None:
+                print "\t".join(outline)
 
 if __name__ == '__main__':
     main()
