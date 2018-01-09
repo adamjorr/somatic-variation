@@ -28,7 +28,7 @@ def load_sam():
 def position_depth(samfile, chr, position):
     regionstr = str(chr) + ':' + str(position)
     for col in samfile.pileup(region = regionstr):
-        if col.reference_pos != position - 1:
+        if col.reference_pos != int(position) - 1:
             continue # -1 because pysam are 0-based coordinates but samtools is 1-based
         else:
             return col.nsegments #just first position in pileup
