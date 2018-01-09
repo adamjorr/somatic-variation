@@ -28,7 +28,12 @@ def load_sam():
 def position_depth(samfile, chr, position):
     regionstr = str(chr) + ':' + str(position)
     for col in samfile.pileup(region = regionstr):
-        return col.n #just first position in pileup
+        if col.reference_pos != position - 1:
+            continue # -1 because pysam are 0-based coordinates but samtools is 1-based
+        else:
+            return col.nsegments #just first position in pileup
+    else:
+        raise ValueError("This pileup is invalid!" + str(chr) + ':' + str(position))
 
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
