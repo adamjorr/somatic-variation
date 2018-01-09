@@ -19,7 +19,7 @@ def is_degenerate(site, codon, table):
     return (len(set(alt_AAs(site,codon,table))) == 1)
 
 def degenerate_pos(seq, table = 1):
-    """Get 1-based positions consisting of the x-fold degenerated codons only."""
+    """Get 0-based positions consisting of the x-fold degenerated codons only."""
     data = []
     for i in range(0, len(seq), 3):
         codon = str(seq[i:i + 3])
@@ -65,12 +65,12 @@ def findSites(bedfilename, reffilename, strand):
     sites = []
     for record in getCDSs(bedfilename, reffilename, strand):
         pos = degenerate_pos(record.seq)
-        refchr, refpos = string.split(record.id, ':', 1)
-        refpos, _ = string.split(refpos, '-', 1)
-        if strand == "+":
-            sites.extend([refchr + ':' + str(int(refpos)+k) for k in pos])
-        else:
-            sites.extend([refchr + ':' + str(int(refpos)+(len(record.seq) - k - 1)) for k in pos])
+        refchr, refpos = record.id.split(':', 1)
+        refpos, _ = refpos.split('-', 1)
+        refpos = int(refpos)
+        for k in pos:
+            p = (refpos + k if strand == "+" else refpos + len(record.seq) - k - 1)
+            sites.append('\t'.join(refchr,str(p),str(p+1)))
     return sites
 
 def main():
