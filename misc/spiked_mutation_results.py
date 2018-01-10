@@ -1,6 +1,7 @@
 #!/usr/bin/env python2
 import pysam
 import vcf
+import sys
 
 def load_muts():
     sample_files = ["mut_files/mut_M" + str(k) + ".txt" for k in range(1,9)] #get every file
@@ -26,14 +27,16 @@ def load_sam():
     return pysam.AlignmentFile(samfile, "rb")
 
 def position_depth(samfile, chr, position):
-    regionstr = str(chr) + ':' + str(position)
-    for col in samfile.pileup(region = regionstr):
-        if col.reference_pos != int(position) - 1:
-            continue # -1 because pysam are 0-based coordinates but samtools is 1-based
-        else:
-            return col.nsegments #just first position in pileup
+    regionstr = str(chr) + ':' + str(position) + '-' + str(position)
+    cols = [c for c in samfile.pileup(region = regionstr, truncate = True)]
+    if len(cols) == 0:
+        return 0
+    elif len(cols) > 1:
+        raise ValueError("There were too many columns returned for this position:" + regionstr)
+    elif cols[0].reference_pos != int(position) - 1:
+        raise ValueError("This pileup is for the wrong position:" + regionstr)
     else:
-        raise ValueError("This pileup is invalid!" + str(chr) + ':' + str(position))
+        return cols[0].nsegments
 
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
