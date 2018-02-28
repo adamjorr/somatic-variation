@@ -93,15 +93,21 @@ Input File Requirements
 -----------------------
 For creation of a psuedo-reference:
  * A reference to a closely-related species in FASTA format
- * Paired sequencing reads in FASTQ format residing in a single directory, with reads from the first mate in a file labelled with an R1 and reads from the second mate in a file labelled with an R2. For example, reads_R1.fq and reads_R2.fq. Advanced users can get around this requirement using options to the `clean_reads.sh` script.
+ * Paired sequencing reads in FASTQ format residing in a single directory, with reads from the first mate in a file labelled with an R1 and reads from the second mate in a file labelled with an R2. For example, reads_R1.fq and reads_R2.fq. This requirement can be circumvented using options to the `clean_reads.sh` script.
 
-Experimental Overview
----------------------
-TODO (Explain the conditions surrounding the experiment here)
+To filter variants using replicated data, you must have replicate samples. These samples should be named such that the replicate identifier is the last character in the string. For example, sample M1a, M1b, and M1c are all replicates of sample M1. M2a, M2b, and M2c are all replicates of M2, which is a different sample than M1. This requirement can be circumvented by ordering the samples in the VCF such that replicates are next to one another and using the `-g` argument to `filt_with_replicates.pl`. This can only be done if you have an equal number of replicates for all your samples.
 
+Our Use Case
+------------
+We investigate the following specific questions:
+ * Can we reconstruct the topology of a tree using only genetic data sampled from its leaves?
+ * What is the somatic mutation rate of a long-lived eucalyptus?
+
+To answer these questions, we sampled in triplicate 8 branches of a eucalyptus tree.
+This tree does not have a reference genome, which is why we attempt to clean up the genome before aligning and calling variants.
+If you have a high-quality reference genome for your data, feel free to skip that step.
 
 See the section on replicating our experiment for more information.
-
 
 Pipeline Summary
 ================
@@ -109,27 +115,31 @@ Pipeline Summary
 Creating A Reference From a Similar Species with Iterative Mapping
 ------------------------------------------------------------------
 
-Do kmer correction with:
+We first clean the reads to avoid fitting errors.
+
+Do read correction with:
 ```bash
-bash clean_reads.sh -i ../data/
+bash clean_reads.sh -i /dir/with/reads
 ```
 
-Then align to a reference with bwa:
+Then align to a reference with NextGenMap:
 ```bash
-bash bwa_aligner.sh -r ref.fa -o bwa1.bam -i ./cleaned_reads/sliced/
-```
-
-Next, realign with Stampy:
-```bash
-bash stampy_realigner.sh -r ref.fa -i bwa1.bam -o stampy1.bam
+ngm_aligner.sh -r original_ref.fa -i ./cleaned_reads/sliced/ -o original_align.bam
 ```
 
 Now obtain a consensus with:
 ```bash
-bash create_consensus.sh -o consensus.fa -r ref.fa -i stampy1.bam
+create_consensus.sh -r original_ref.fa -i original_align.bam -o better_ref.fa
 ```
 
 This process can be repeated, using the new consensus as a reference to converge on a reference specific to the individual sequenced.
+
+To avoid interfering with any assumptions made by the variant caller, we recommend aligning the uncorrected reads before calling variants.
+```bash
+ngm_aligner.sh -r better_ref.fa -i /dir/with/reads -o better_alignment.bam
+```
+
+
 
 Calling Somatic Variants 
 ------------------------
@@ -137,26 +147,29 @@ Variant calling can be performed using your favorite software. We provide a scri
 
 To call variants:
 ```bash
-bash gatkcaller.sh -r reference.fa -i data.bam -o variants.vcf
+bash gatkcaller.sh -r better_ref.fa -i better_alignment.bam -o variants.vcf
 ```
 
 Filtering Results
 ------------------
-To filter our VCF using any replication information, use `filt_with_replicates.pl`.
-Note that this script assumes that you have your VCF file ordered such that the replicates are next to each other. For example, -g 3 will assume that the first 3 samples are replicates of one another.
-
+To filter our VCF using available replication information, use `filt_with_replicates.pl`.
+By default this script assumes replicates of a sample will be identically named except for a replicate identifier as the last character.
+You can use the `-g` option to tell the script that you have your VCF file ordered such that the replicates are next to each other.
+For example, `-g 3` will assume that the first 3 samples are replicates of one another, and every group of 3 samples after that are replicates of each other, and so on.
 ```bash
-perl filt_with_replicates.pl <variants.vcf >filtered.vcf
+perl filt_with_replicates.pl <variants.vcf >repfiltered.vcf
 ```
 
-Now we can filter our VCF with various depth and heterozygosity filters like using the `filervcf.sh` file.
-
+We recommend following this with a depth and heterozygosity filter and removing any non-snps. This can be accomplished by running
+```bash
+bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' repfiltered.vcf | bcftools view -m2 -M2 -v snps -o filtered.vcf
+```
 This gives us a filtered VCF of our 'best' variant calls. 
 
 Building A Tree
 ---------------
 
-To turn this vcf into a FASTA file of all the variable sites, use `vcf2fa.sh`.
+To turn this vcf into a FASTA file that concatenates all the variable sites, use `vcf2fa.sh`.
 ```bash
 bash vcf2fa.sh <filtered.vcf >filtered.fa
 ```
@@ -170,7 +183,7 @@ Now you can use your favorite program to create a tree using this FASTA file.
 
 The filtering and tree construction can be simplified to one step if you have RAxML installed by using the `vcf2tree.sh` script.
 ```bash
-bash vcf2tree.sh -i variants.vcf -o tree.nwk -g 3
+bash vcf2tree.sh -i variants.vcf -o tree.nwk
 ```
 
 We provide a simple R script to plot the tree and save it as a PDF. There are many tools that can visualize newick trees. This one will plot and label the tips using the first string of numbers that appears in its name.
