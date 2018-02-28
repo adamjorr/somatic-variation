@@ -79,8 +79,10 @@ make prefix=/where/to/install install
 The GATK requires registration before downloading the software. Visit [this link](https://software.broadinstitute.org/gatk/download/) and follow the instructions. Once you have accepted the license and downloaded the software archive, extract it and put the .jar file somewhere on your path.
 
 ### RAxML
-Download and extract the source from [github](https://github.com/stamatak/standard-RAxML). Detailed installation instructions are available on the bottom of that page. To summarize: enter the directory and run 
+Detailed installation instructions are available on [github](https://github.com/stamatak/standard-RAxML). To summarize, run:
 ```bash
+git clone https://github.com/stamatak/standard-RAxML
+cd standard-RAxML
 make -f Makefile.PTHREADS.gcc
 rm *.o
 ```
