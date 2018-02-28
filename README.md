@@ -19,7 +19,7 @@ Software Requirements
 
 Software Installation
 ---------------------
-###khmer
+### khmer
 ```bash
 pip install khmer
 ```
@@ -31,27 +31,27 @@ conda install khmer
 ```
 
 
-###Rcorrector
+### Rcorrector
 ```bash
 git clone https://github.com/mourisl/rcorrector.git
 cd rcorrector
 make
 ```
 
-###GNU parallel
+### GNU parallel
 Many distributions have packages to install parallel. For Ubuntu:
 ```bash
 sudo apt-get install parallel
 ```
 
-###BWA
+### BWA
 ```bash
 git clone https://github.com/lh3/bwa.git
 cd bwa
 make
 ```
 
-###Samtools, Bcftools, and HTSlib
+### Samtools, Bcftools, and HTSlib
 Visit the [htslib website](www.htslib.org/download/) for more information. In summary:
 
 Download the release from www.htslib.org/download/, extract the archive, and enter the directory. Then,
@@ -60,13 +60,13 @@ make
 make prefix=/where/to/install install
 ```
 
-###Stampy
+### Stampy
 Stampy requires the user to register before downloading the software. Visit [this link](http://www.well.ox.ac.uk/software-download-registration) to do so. Once this is done, use the link provided in the registration email to download the archive. Extract it, enter the directory, then build the software with make.
 ```bash
 make
 ```
 
-###GATK
+### GATK
 The GATK also requires registration before downloading the software. Visit [this link](https://software.broadinstitute.org/gatk/download/) and follow the instructions. Once you have accepted the license and downloaded the software archive, extract it and put the .jar file somewhere on your path.
 
 
@@ -169,7 +169,7 @@ do_experiment.sh folder_containing_reads/
 
 Script Documentation
 ====================
-##clean_reads.sh
+## clean_reads.sh
 Usage: clean_reads.sh [-t THREADS] [-s SLICE_THREADS] [-d DEST_DIRECTORY] [-k KMER_SIZE] [-f FILE_SUFFIX] [-1 FIRSTMATE] [-2 SECONDMATE] [-m MAX_MEMORY] [-c COVERAGE] -i READ_DIRECTORY
 
  * **-t:** number of threads to use [48]
@@ -193,17 +193,17 @@ The -c flag is an approximate coverage cutoff to filter on using Khmer and defau
 The -i option specifies the directory to search for reads to correct.
 The -s option specifies the number of threads to use during khmer slicing. This will use MAX_MEMORY x SLICE_THREADS amount of memory, so make sure your system supports at least that much memory or the program will crash.
 
-###What it does
+### What it does
 Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
 
-###Why do we use it
+### Why do we use it
 Later in the pipeline, we want to estimate a genome using the reads we've generated and the reference of a closely related species.
 However, it's infeasible to use a heavy-duty variant caller to approximate a new reference during iteration. Thus, we use an error-prone
 but faster variant caller to approximate each new reference. To reduce the chance of getting errors during the creation of a new reference
 and then fitting to those errors, we remove sequencing error first with Rcorrector. We then remove extremely high-coverage reads
 with Khmer, as these regions can also cause problems with variant calling.
 
-###Expected output
+### Expected output
 A file containing the khmer graph, called khmer_count.graph.
 
 Two folders: 
@@ -212,7 +212,7 @@ Two folders:
 
 Output reads will have the same name as the input reads, but corrected reads will have a .cor.fq suffix and sliced reads will have a .cor_sliced.${FILE_SUFFIX} suffix.
 
-##slice-paired-reads-by-coverage.py
+## slice-paired-reads-by-coverage.py
 Usage: slice-paired-reads-by-coverage.py [-m MIN_COVERAGE] [-M MAX_COVERAGE] INPUT_GRAPH INPUT_READS1 INPUT_READS2 OUTPUT_READS1 OUTPUT_READS2 [OUTPUT_SINGLETONS]
 
  * **-m:** remove reads with approximate coverage below this value [none]
@@ -226,17 +226,17 @@ Usage: slice-paired-reads-by-coverage.py [-m MIN_COVERAGE] [-M MAX_COVERAGE] INP
 
 This is a modified version of khmer's [slice-reads-by-coverage.py](https://github.com/dib-lab/khmer/blob/master/sandbox/slice-reads-by-coverage.py) script. It can handle paired-end reads. Check out [this blog post](http://ivory.idyll.org/blog/2014-slice-reads-by-coverage.html) for more details on how the script works. In summary, it will remove reads which have a high or low expected coverage level. This can be useful for removing reads which are likely to be errors or reads likely to map to repetitive regions. All positional arguments are required except the singleton output file. One of -m or -M must be specified.
 
-###What it does
+### What it does
 Removes reads which have a high or low expected coverage level using khmer.
 
-###Why do we use it
+### Why do we use it
 This is a modified version of a script included in the khmer package. The included version of the script does not keep any read pairing information. Since we have
 paired reads and would like to preserve mate pair information, but also want to filter out highly repetitive reads (as described above), we use this script.
 
-###Expected output
+### Expected output
 3 files: OUTPUT_READS1, OUTPUT_READS2, and OUTPUT_SINGLETONS, which are the first, second, and singleton reads. The singleton reads are those that passed filtering, but their mates did not.
 
-##bwa_aligner.sh
+## bwa_aligner.sh
 Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/
 
  * **-t:** number of threads to use [48]
@@ -262,16 +262,16 @@ It will then match these files with their mates by substituting the value of -2.
 The pairs of reads should be in the same directory and have the same name except for the substitution of the value of -1 for the value of -2.
 For example, in a data directory with reads_R1.fastq and reads_R2.fastq, by default the script will identify the two files by their suffixes, identify the file containing R1 as the first set of reads and substitute R1 with R2 to identify the file containing the second set of reads.
 
-###What it does
+### What it does
 Uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
 
-###Why do we use it
+### Why do we use it
 BWA is a fast and accurate way to map reads to a reference.
 
-###Expected output
+### Expected output
 A bam file, specified by -o.
 
-##stampy_realigner.sh
+## stampy_realigner.sh
 Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-o out.bam] -r reference.fasta -i data.bam
 
  * **-t:** number of threads to use [48]
@@ -283,17 +283,17 @@ Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-o out.bam] -r reference.fa
 This script uses Stampy to realign poorly mapped reads (from Stampy's --bamkeepgoodreads option) and outputs to `out.bam`. The given reference should be the same used to generate `data.bam`.
 A temporary directory to be used can be specified with -d.
 
-###What it does
+### What it does
 Remaps poorly aligned reads in a given bam file using Stampy.
 
-###Why do we use it
+### Why do we use it
 BWA is fast and accurate, while Stampy is slow but even more accurate. We use BWA to align the reads to our reference first, then use Stampy to realign
 the reads that were poorly mapped by BWA.
 
-###Expected output
+### Expected output
 A bam file, specified by -o.
 
-##create_consensus.sh
+## create_consensus.sh
 Usage: create_consensus.sh [-t THREADS] [-d TMPDIR] [-f FILTER] [-c CHAINFILE] [-b BCFTOOLSFILE] -o out.fa -r reference.fasta -i in.bam
 
  * **-t:** number of threads to use [48]
@@ -307,20 +307,20 @@ Usage: create_consensus.sh [-t THREADS] [-d TMPDIR] [-f FILTER] [-c CHAINFILE] [
 
 This script uses bcftools and tabix to create a consensus in fasta format from a BAM file aligned to a reference. A filter is applied to the genotypes called by bcftools which can be changed with -f to give the desired behavior. A chain file that describes the differences between the reference and the output is generated with the same name as the output fasta file with an added .chain suffix by default. This can be changed with the -c flag. A file containing the genotype calls made by BCFtools is generated and can be saved for use with the -b option.
 
-###What it does
+### What it does
 Uses bcftools and tabix to create a consensus sequence in fasta format from a BAM file.
 
-###Why do we use it
+### Why do we use it
 Since we don't have a proper reference for our data, we call a consensus from our alignment to generate a new reference that is hopefully closer to
 the true reference for our species. Using this reference will improve the quality of an alignment produced using reads from our species.
 A higher quality alignment will lead to higher quality variant calls.
 
-###Expected output
+### Expected output
  * A consensus reference specified by -o.
  * A chainfile describing the rearrangements between the input reference and the output consensus file. By default, this has the same name as the output consensus but with an additional .chain suffix.
  * When -b is used, a vcf file of variant calls used to generate the consensus.
 
-##gatkcaller.sh
+## gatkcaller.sh
 Usage: gatkcaller.sh [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g GATK_PATH] [-b BEDFILE] [-o OUTFILE] -r ref.fa -i data.bam
 
  * **-t:** number of threads to use [48]
@@ -334,17 +334,17 @@ Usage: gatkcaller.sh [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g GATK_PATH] [-b
 
 A script implementing the [GATK best practices](https://software.broadinstitute.org/gatk/best-practices/) to call variants from the input BAM file. A BED file can be specified to exclude the regions described in it from variant calling, if desired.
 
-###What it does
+### What it does
 Calls variants from a BAM file using the GATK best practices.
 
-###Why do we use it
+### Why do we use it
 Discovering variants from an alignment of reads is not trivial, so we use the GATK best practices pipeline to do so. Though we are interested in somatic variants,
 we don't use the GATK's somatic variant caller because it is intended for detection of variation in human cancer.
 
-###Expected output
+### Expected output
 A vcf file specified by -o.
 
-##filt_with_replicates.pl
+## filt_with_replicates.pl
 Usage: filt_with_replicates.pl [-s | --strict] [-m | --majority] [-g | --grouped int] [-h | -? | --help] <vcfile.vcf >filtered.vcf
 
  * **-s:** do strict strict filtering
@@ -353,17 +353,17 @@ Usage: filt_with_replicates.pl [-s | --strict] [-m | --majority] [-g | --grouped
 
 This script filters a vcf using replicate data from the VCF. By default, it will consider all samples to be replicates of one another that have the same sample name except for the last character. Using -g, one can specify that the replicates are grouped together in the VCF. For example, -g 3 will assume that the first 3 samples are replicates of one another, the 2nd 3 samples are replicates of one another, and so on. A group of replicates will not pass the filter unless the genotypes of all replicates match. The -m flag relaxes this stipulation, and allows a group to pass filtering if the majority of replicates match. In this case, all genotypes of the replicate will be changed to the majority. If a replicate fails to pass filtering, all samples of that replicate are changed to have a ./. genotype. The -s flag alters filtering behavior such that a site is only emitted if all replicates pass filtering at that site.
 
-###What it does
+### What it does
 Filter a vcf using replicate information.
 
-###Why do we use it
+### Why do we use it
 The GATK pipeline doesn't use information about replicates to determine the quality of variants. We have replicates and can use that information to reduce the
 number of false positives with this script.
 
-###Expected output
+### Expected output
 A filtered vcf file printed to stdout.
 
-##vcf2fa.sh
+## vcf2fa.sh
 Usage: vcf2fa.sh [-d tmp_dir/] [-i file.vcf] [-o out.fa]
 
  * **-d:** temporary directory to use [/tmp/ or equivalent]
@@ -373,17 +373,17 @@ Usage: vcf2fa.sh [-d tmp_dir/] [-i file.vcf] [-o out.fa]
 This script takes sites in the input VCF and outputs them to a fasta alignment of all the sites using IUPAC ambiguity for heterozygous sites.
 Note that any downstream analysis should be done using ascertainment bias correction if possible, unless you know exactly what you're doing.
 
-###What it does
+### What it does
 Takes sites from a VCF file and generates a fasta alignment of these sites.
 
-###Why do we use it
+### Why do we use it
 The easiest way to generate a phylogeny with any arbitrary software package is to give it a fasta-formatted alignment of sites.
 We use this script to generate that alignment from our file of variants.
 
-###Expected output
+### Expected output
 A fasta alignment specified by -o. If -o is not used, prints to stdout.
 
-##diploidify.py
+## diploidify.py
 Usage: diploidify.py [-i INFILE] [-t IN_TYPE] [-o OUTFILE] [-p OUTTYPE] [-v] [-s]
 
  * **-i:** input alignment [stdin]
@@ -395,18 +395,18 @@ Usage: diploidify.py [-i INFILE] [-t IN_TYPE] [-o OUTFILE] [-p OUTTYPE] [-v] [-s
 
 A script to turn an alignment where each diploid genotype is represented as one site with IUPAC ambiguity codes into an alignment where each genotype is represented as 2 sites. This script also removes sites that require two mutations (like C/C -> T/T). It also removes sites that have 3 alleles. Using -s will keep these checks (ie remove triallelic sites and sites that require multiple mutations) but won't expand each site into two other sites, keeping the original notation. Using -v will output only variable sites.
 
-###What it does
+### What it does
 Takes a fasta alignment and doubles the number of sites, eliminating IUPAC ambiguity codes. This is useful if the ambiguity codes represent a diploid genotype and not actual ambiguity.
 
-###Why do we use it
+### Why do we use it
 We have a diploid organism, and at each site the genotype of our diploid is represented with an IUPAC ambiguity code. However, most tree inferring software
 will assume (correctly) that these codes represent ambiguity at a site. Thus, we use this script to remove ambiguiuty codes while retaining information about
 mutation and differences between samples at any site.
 
-###Expected output
+### Expected output
 An alignment specified by -o. If -o is not used, prints to stdout.
 
-##vcf2tree.sh
+## vcf2tree.sh
 Usage: vcf2tree.sh [-t THREADS] [-r raxmlHPC] [-i in.vcf] [-o out.nwk] -g GROUPBY
 
  * **-t:** threads to use for tree construction [12]
@@ -417,16 +417,16 @@ Usage: vcf2tree.sh [-t THREADS] [-r raxmlHPC] [-i in.vcf] [-o out.nwk] -g GROUPB
 
 Takes a vcf file and filters it using the strict mode of `filt_with_replicates.pl`, creates a fasta alignment with `vcf2fa`, then creates a diploidified version of the alignment with `diploidify.py`, and finally creates a newick tree using RAxML. -g is the same argument used in `filt_with_replicates.pl`. Use -r to tell the script how to invoke RAxML on this system.
 
-###What it does
+### What it does
 Creates a newick tree from a VCF file.
 
-###Why do we use it
+### Why do we use it
 To generate a tree with RAxML.
 
-###Expected output
+### Expected output
 A newick tree specified by -o. If -o is not specified, prints the tree to stdout.
 
-##plot_tree.R
+## plot_tree.R
 Usage: Rscript plot_tree.R tree.nwk plot.pdf
 
  * **tree.nwk:** name of tree file to plot
@@ -434,12 +434,12 @@ Usage: Rscript plot_tree.R tree.nwk plot.pdf
 
 R script to plot the given newick tree. The script will label the tips using the first string of numbers that appears in its name. Requires the ape and phytools R packages.
 
-###What it does
+### What it does
 Plots a newick tree.
 
-###Why do we use it
+### Why do we use it
 We want to see a graphical representation of what a tree looks like.
 
-###Expected output
+### Expected output
 A pdf file, given as the second argument to the script.
 
