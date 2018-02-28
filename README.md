@@ -20,14 +20,11 @@ Software Requirements
 ---------------------
  1. [khmer](https://github.com/dib-lab/khmer) version 2.0+67.g136bb3d.dirty or later to use `clean_reads.sh`.
  2. [Rcorrector](https://github.com/mourisl/rcorrector) commit `eba3f79` or later to use `clean_reads.sh`.
- 3. GNU parallel version 20160722 or later.
- 4. BWA version 0.7.15-r1140 or later.
- 5. Samtools version 1.3.1 or later.
- 6. Stampy version 1.0.30 or later.
- 7. Bcftools version 1.3.1 or later
- 8. HTSlib version 1.3.1 or later
- 9. GATK version 3.7 or later to use `gatkcaller.sh`
- 10. RAxML version 8.0.0 or later to use `vcf2tree.sh`
+ 3. [NextGenMap](http://cibiv.github.io/NextGenMap/) version 0.5.2 or later.
+ 4. GNU parallel version 20160722 or later.
+ 5. Samtools, Bcftools, and HTSlib version 1.3.1 or later.
+ 6. GATK version 3.7 or later to use `gatkcaller.sh`
+ 7. RAxML version 8.0.0 or later to use `vcf2tree.sh`
 
 Software Installation
 ---------------------
