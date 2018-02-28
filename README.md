@@ -4,6 +4,18 @@ Herein we describe our pipeline for detecting somatic mutants.
 
 Many scripts in this pipeline use temporary files that are prone to clobbering, so don't attempt to run these scripts in parallel unless you do so in another working directory.
 
+Summary
+-------
+```bash
+clean_reads.sh -i /dir/with/reads #correct reads with Rcorrector, then use khmer to filter out reads with repetitive kmers.
+ngm_aligner.sh -r original_ref.fa -i ./cleaned_reads/sliced/ -o original_align.bam #align the reads in the input directory with ngm
+create_consensus.sh -r original_ref.fa -i original_align.bam -o better_ref.fa #create a consensus sequence to use as an individualized reference
+ngm_aligner.sh -r better_ref.fa -i /dir/with/reads -o better_alignment.bam #align uncorrected reads to the individualized reference
+gatkcaller.sh -r better_ref.fa -i better_alignment.bam -o variants.vcf #use gatk to call variants
+bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' variants.vcf | bcftools view -m2 -M2 -v snps -o filtered.vcf #filter variants and grab only snps
+vcf2tree.sh -i filtered.vcf -o tree.nwk #concatenate the snps the generate a tree
+```
+
 Software Requirements
 ---------------------
  1. [khmer](https://github.com/dib-lab/khmer) version 2.0+67.g136bb3d.dirty or later to use `clean_reads.sh`.
