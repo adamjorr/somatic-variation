@@ -47,17 +47,23 @@ cd rcorrector
 make
 ```
 
+### NextGenMap
+Ensure your conda channels are properly configured
+```bash
+conda config --add channels conda-forge
+conda config --add channels defaults
+conda config --add channels r
+conda config --add channels bioconda
+```
+Then install
+```bash
+conda install nextgenmap
+```
+
 ### GNU parallel
 Many distributions have packages to install parallel. For Ubuntu:
 ```bash
 sudo apt-get install parallel
-```
-
-### BWA
-```bash
-git clone https://github.com/lh3/bwa.git
-cd bwa
-make
 ```
 
 ### Samtools, Bcftools, and HTSlib
@@ -69,15 +75,17 @@ make
 make prefix=/where/to/install install
 ```
 
-### Stampy
-Stampy requires the user to register before downloading the software. Visit [this link](http://www.well.ox.ac.uk/software-download-registration) to do so. Once this is done, use the link provided in the registration email to download the archive. Extract it, enter the directory, then build the software with make.
+### GATK
+The GATK requires registration before downloading the software. Visit [this link](https://software.broadinstitute.org/gatk/download/) and follow the instructions. Once you have accepted the license and downloaded the software archive, extract it and put the .jar file somewhere on your path.
+
+### RAxML
+Download and extract the source from [github](https://github.com/stamatak/standard-RAxML). Detailed installation instructions are available on the bottom of that page. To summarize: enter the directory and run 
 ```bash
-make
+make -f Makefile.PTHREADS.gcc
+rm *.o
 ```
 
-### GATK
-The GATK also requires registration before downloading the software. Visit [this link](https://software.broadinstitute.org/gatk/download/) and follow the instructions. Once you have accepted the license and downloaded the software archive, extract it and put the .jar file somewhere on your path.
-
+A different compilation configuration may allow RAxML to run faster based on your computer's configuration, so be sure to look at the repository for more information.
 
 Input File Requirements
 -----------------------
