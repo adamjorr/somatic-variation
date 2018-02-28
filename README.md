@@ -4,7 +4,7 @@ Herein we describe our pipeline for detecting somatic mutants.
 
 Many scripts in this pipeline use temporary files that are prone to clobbering, so don't attempt to run these scripts in parallel unless you do so in another working directory.
 
-Summary
+Overview
 -------
 ```bash
 clean_reads.sh -i /dir/with/reads #correct reads with Rcorrector, then use khmer to filter out reads with repetitive kmers.
