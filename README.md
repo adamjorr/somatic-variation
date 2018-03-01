@@ -335,8 +335,8 @@ Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN]
 This script uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
 The -p flag can be used to set the PLATFORM flag in the resultant BAM file; the default value is ILLUMINA.
 The -1, -2, and -q flags change how the script identifies the files containing reads to align.
--q is a pattern that is searched for to identify reads with the default value '*.fastq' .
-To find files ending with '.fq', for example, use -q '*.fq'.
+-q is a pattern that is searched for to identify reads with the default value '\*.fastq' .
+To find files ending with '.fq', for example, use -q '\*.fq'.
 Remember to use quotes so the shell doesn't expand the wildcard.
 The -1 and -2 options control how the script finds which of the FASTQ files given are the forward and reverse mate.
 By default, -1 is R1 and -2 is R2.
