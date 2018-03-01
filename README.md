@@ -16,10 +16,25 @@ bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' variants.vcf | bcftools v
 vcf2tree.sh -i filtered.vcf -o tree.nwk #concatenate the snps the generate a tree
 ```
 
-Tunable Filters
----------------
- * `create_consensus.sh`
- * foo
+Important Filters
+-----------------
+These scripts have important filters. Their behavior is summarized here.
+ * `create_consensus.sh` - By default, ignore sites where number of alt alleles equals 1 while creating consensus sequence.
+   - **-f** can be used to change this with any valid bcftools filter expression
+ * `filt_with_replicates.pl` - Samples with discordant replicates have their genotypes changed to ./.
+   - **-s:** no missing genotypes allowed (only emit sites where every sample's replicates agree)
+   - **-m:** change non-matching genotypes to the one that matches the majority
+ * `diploidify.py`
+   - removes sites that require two mutations (like C/C -> T/T)
+   - removes sites that have 3 or more alleles
+   - **-v** outputs only variable sites
+
+We also recommend filtering your final variants with a depth and heterozygosity filter, as well as ignoring variants near indels (the `-g` option).
+These can be symptoms of alignment errors.
+We also remove any non-snps. This is done with the following command:
+```bash
+bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' repfiltered.vcf | bcftools view -m2 -M2 -v snps -o filtered.vcf
+```
 
 Software Requirements
 ---------------------
@@ -372,7 +387,7 @@ Usage: create_consensus.sh [-t THREADS] [-d TMPDIR] [-f FILTER] [-c CHAINFILE] [
  * **-r:** reference used to create input BAM file.
  * **-i:** input BAM file to create consensus from.
 
-This script uses bcftools and tabix to create a consensus in fasta format from a BAM file aligned to a reference. A filter is applied to the genotypes called by bcftools which can be changed with -f to give the desired behavior. A chain file that describes the differences between the reference and the output is generated with the same name as the output fasta file with an added .chain suffix by default. This can be changed with the -c flag. A file containing the genotype calls made by BCFtools is generated and can be saved for use with the -b option.
+This script uses bcftools and tabix to create a consensus in fasta format from a BAM file aligned to a reference. A filter is applied to the genotypes called by bcftools which can be changed with -f to give the desired behavior. The default is to ignore sites where the number of alt alleles equals 1. A chain file that describes the differences between the reference and the output is generated with the same name as the output fasta file with an added .chain suffix by default. This can be changed with the -c flag. A file containing the genotype calls made by BCFtools is generated and can be saved for use with the -b option.
 
 ### What it does
 Uses bcftools and tabix to create a consensus sequence in fasta format from a BAM file.
@@ -414,7 +429,7 @@ A vcf file specified by -o.
 ## filt_with_replicates.pl
 Usage: filt_with_replicates.pl [-s | --strict] [-m | --majority] [-g | --grouped int] [-h | -? | --help] <vcfile.vcf >filtered.vcf
 
- * **-s:** do strict strict filtering
+ * **-s:** do strict filtering
  * **-m:** do majority-rule filtering
  * **-g:** replicates are found in groups of INT
 
@@ -482,7 +497,7 @@ Usage: vcf2tree.sh [-t THREADS] [-r raxmlHPC] [-i in.vcf] [-o out.nwk] -g GROUPB
  * **-o:** output newick tree [stdout]
  * **-g:** replicates are in groups of this. See documentation for `filt_with_replicates.pl` for more information.
 
-Takes a vcf file and filters it using the strict mode of `filt_with_replicates.pl`, creates a fasta alignment with `vcf2fa`, then creates a diploidified version of the alignment with `diploidify.py`, and finally creates a newick tree using RAxML. -g is the same argument used in `filt_with_replicates.pl`. Use -r to tell the script how to invoke RAxML on this system.
+Takes a vcf file and filters it using the strict mode of `filt_with_replicates.pl`, creates a fasta alignment with `vcf2fa.sh`, then creates a diploidified version of the alignment with `diploidify.py`, and finally creates a newick tree using RAxML. -g is the same argument used in `filt_with_replicates.pl`. Use -r to tell the script how to invoke RAxML on this system.
 
 ### What it does
 Creates a newick tree from a VCF file.
