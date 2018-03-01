@@ -272,7 +272,7 @@ Usage: clean_reads.sh [-t THREADS] [-s SLICE_THREADS] [-d DEST_DIRECTORY] [-k KM
 This script uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is used to remove errors and Khmer is used to remove excessively repetitive reads.
 The -d option changes which directory to put output in and defaults to ./cleaned_reads .
 The -k option changes the kmer size to use and defaults to 32.
-The -f flag is a pattern that finds reads in READ_DIRECTORY matching that pattern; by default, it is '*.fastq' .
+The -f flag is a pattern that finds reads in READ_DIRECTORY matching that pattern; by default, it is '\*.fastq' .
 The -1 and -2 flags are the search and replace strings used to find the file containing the mates specified in the file found by the FILE_PATTERN. The default values are R1 and R2. For example, if read mates are specified only by 1 or 2 and not by R1 and R2, -s should be 1 and -r should be 2, so that the mates of reads1.fq are properly found in reads2.fq.
 The -m flag controls how much memory is allocated to khmer and defaults to 64e9.
 The -c flag is an approximate coverage cutoff to filter on using Khmer and defaults to 40000.
@@ -284,14 +284,11 @@ Uses Rcorrector and Khmer to clean reads found in READ_DIRECTORY. Rcorrector is 
 
 ### Why do we use it
 Later in the pipeline, we want to estimate a genome using the reads we've generated and the reference of a closely related species.
-However, it's infeasible to use a heavy-duty variant caller to approximate a new reference during iteration. Thus, we use an error-prone
-but faster variant caller to approximate each new reference. To reduce the chance of getting errors during the creation of a new reference
-and then fitting to those errors, we remove sequencing error first with Rcorrector. We then remove extremely high-coverage reads
-with Khmer, as these regions can also cause problems with variant calling.
+To reduce the chance of fitting errors during the creation of a new reference, we remove sequencing errors first with Rcorrector.
+We then remove extremely high-coverage reads with Khmer, as these are likely erroneous and may cause errors if they map to the wrong place in the genome.
 
 ### Expected output
 A file containing the khmer graph, called khmer_count.graph.
-
 Two folders: 
  * **corrected/** containing the corrected read pairs.
  * **sliced/** containing the read pairs after filtration with Khmer, as well as reads which passed filtering but their mate did not.
@@ -328,7 +325,7 @@ Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN]
  * **-t:** number of threads to use [48]
  * **-d:** temporary directory to use
  * **-p:** PLATFORM flag for BAM file [ILLUMINA]
- * **-q:** pattern to find reads ['*.fastq']
+ * **-q:** pattern to find reads ['\*.fastq']
  * **-1:** pattern to find first mate in pair [R1]
  * **-2:** pattern to find second mate in pair [R2]
  * **-o:** BAM file to write alignment to [STDOUT]
