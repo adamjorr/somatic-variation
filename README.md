@@ -16,6 +16,11 @@ bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' variants.vcf | bcftools v
 vcf2tree.sh -i filtered.vcf -o tree.nwk #concatenate the snps the generate a tree
 ```
 
+Tunable Filters
+---------------
+ * `create_consensus.sh`
+ * foo
+
 Software Requirements
 ---------------------
  1. [khmer](https://github.com/dib-lab/khmer) version 2.0+67.g136bb3d.dirty or later to use `clean_reads.sh`.
@@ -319,8 +324,8 @@ paired reads and would like to preserve mate pair information, but also want to 
 ### Expected output
 3 files: OUTPUT_READS1, OUTPUT_READS2, and OUTPUT_SINGLETONS, which are the first, second, and singleton reads. The singleton reads are those that passed filtering, but their mates did not.
 
-## bwa_aligner.sh
-Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] -r reference.fa -i data/
+## ngm_aligner.sh
+Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN] [-1 FIRSTMATE] [-2 SECONDMATE] [-o out.bam] [-s SENSITIVITY] -r reference.fa -i data/
 
  * **-t:** number of threads to use [48]
  * **-d:** temporary directory to use
@@ -329,10 +334,11 @@ Usage: bwa_aligner.sh [-t THREADS] [-d TMPDIR] [-p RG_PLATFORM] [-q FILEPATTERN]
  * **-1:** pattern to find first mate in pair [R1]
  * **-2:** pattern to find second mate in pair [R2]
  * **-o:** BAM file to write alignment to [STDOUT]
- * **-r:** reference to align to with BWA
+ * **-s:** SENSITIVITY parameter to pass to ngm [estimated from data]
+ * **-r:** reference to align to with ngm
  * **data/:** directory to search for reads
 
-This script uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
+This script uses ngm to align reads in the given directory to the given reference and outputs a bamfile.
 The -p flag can be used to set the PLATFORM flag in the resultant BAM file; the default value is ILLUMINA.
 The -1, -2, and -q flags change how the script identifies the files containing reads to align.
 -q is a pattern that is searched for to identify reads with the default value '\*.fastq' .
@@ -346,32 +352,10 @@ The pairs of reads should be in the same directory and have the same name except
 For example, in a data directory with reads_R1.fastq and reads_R2.fastq, by default the script will identify the two files by their suffixes, identify the file containing R1 as the first set of reads and substitute R1 with R2 to identify the file containing the second set of reads.
 
 ### What it does
-Uses BWA to align reads in the given directory to the given reference and outputs a bamfile.
+Uses ngm to align reads in the given directory to the given reference and outputs a bamfile.
 
 ### Why do we use it
-BWA is a fast and accurate way to map reads to a reference.
-
-### Expected output
-A bam file, specified by -o.
-
-## stampy_realigner.sh
-Usage: stampy_realigner.sh [-t THREADS] [-d TMPDIR] [-o out.bam] -r reference.fasta -i data.bam
-
- * **-t:** number of threads to use [48]
- * **-d:** temporary directory to use
- * **-o:** BAM file to write alignment to [STDOUT]
- * **-r:** reference to align to with BWA
- * **-i:** input BAM file to remap
-
-This script uses Stampy to realign poorly mapped reads (from Stampy's --bamkeepgoodreads option) and outputs to `out.bam`. The given reference should be the same used to generate `data.bam`.
-A temporary directory to be used can be specified with -d.
-
-### What it does
-Remaps poorly aligned reads in a given bam file using Stampy.
-
-### Why do we use it
-BWA is fast and accurate, while Stampy is slow but even more accurate. We use BWA to align the reads to our reference first, then use Stampy to realign
-the reads that were poorly mapped by BWA.
+ngm is a fast and accurate way to map reads to a reference. It also calculates a sensitivity parameter that can be helpful when mapping to a divergent reference.
 
 ### Expected output
 A bam file, specified by -o.
