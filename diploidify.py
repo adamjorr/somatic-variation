@@ -44,12 +44,14 @@ gaps = {
 # But this is most likely an artifact so we filter it.
 def is_valid_site(baselist):
 	"""Returns TRUE if we have an iupac entry for all the sites; false otherwise"""
-	if False in [b in iupac.keys() for b in baselist]: return False
-	return True
+	if False in [b in iupac.keys() for b in baselist]:
+		return False
+	else:
+		return True
 
 def is_biallelic(baselist):
 	"""Returns TRUE if list of bases is biallelic; false otherwise"""
-	return unique_list_size(baselist) < 3
+	return unique_list_size(non_gap_bases(baselist)) < 3
 
 def unique_list_size(alist):
 	"""Returns the size of a unique version of the input list"""
