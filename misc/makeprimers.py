@@ -24,12 +24,18 @@ def make_primer_for_record(record, referencedict):
         'SEQUENCE_TEMPLATE' : referencedict[chrom],
         'SEQUENCE_TARGET' : [pos, 1]
     }
+    # global_args = {
+    #     'PRIMER_TASK' : 'pick_discriminative_primers',
+    #     'PRIMER_FIRST_BASE_INDEX' : 1,
+    #     'PRIMER_PICK_ANYWAY' : 1,
+    #     'PRIMER_PRODUCT_SIZE_RANGE' : [[36,300]]
+    # }
     global_args = {
-        'PRIMER_TASK' : 'pick_discriminative_primers',
+        'PRIMER_TASK' : 'pick_sequencing_primers',
         'PRIMER_FIRST_BASE_INDEX' : 1,
-        'PRIMER_PICK_ANYWAY' : 1,
-        'PRIMER_PRODUCT_SIZE_RANGE' : [[36,300]]
+        'PRIMER_PICK_ANYWAY' : 1
     }
+
     # libdict = {k:v for k,v in referencedict.items() if k is not chrom}
     return primer3.bindings.designPrimers(seq_args = seq_args, global_args = global_args)
 
