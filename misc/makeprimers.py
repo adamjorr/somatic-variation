@@ -34,7 +34,7 @@ def make_primer_for_record(record, referencedict, exclusions):
 
     if exclusions is not None:
         ex = exclusions[pos]
-        seq_args['SEQUENCE_EXCLUDED_REGION'] = [[e, 1] for e in ex if e is not pos]
+        seq_args['SEQUENCE_EXCLUDED_REGION'] = [e for e in ex if e is not [pos,1]]
 
     global_args = {
         'PRIMER_TASK' : 'pick_sequencing_primers',
@@ -94,7 +94,7 @@ def load_exclusions(exclusionfile):
     reader = vcf.Reader(filename = exclusionfile)
     d = dict()
     for record in reader:
-        d.setdefault(record.CHROM, list()).append(record.POS)
+        d.setdefault(record.CHROM, list()).append([record.POS,1])
     return d
 
 def main():
