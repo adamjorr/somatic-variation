@@ -1,58 +1,47 @@
-library(karyoploteR)
 library(VariantAnnotation)
 library(IRanges)
 library(GenomicRanges)
+library(GenomicFeatures)
 library(tidyverse)
 
 
-genome <- toGRanges("chromosomes.txt")
-bands <- toGRanges("genes.txt")
-withrepeats <- read_tsv("positions_with_repeats.txt", col_names=c("chr","pos"))
-norepeats <- read_tsv("positions_no_repeats.txt", col_names=c("chr","pos"))
-genes <- read_tsv("genes.txt") %>%
-  group_by(chr)
-
-pdf("chromosome_plot.pdf",10,8)
-kp <- plotKaryotype(genome = genome, cytobands = bands, cex=.75)
-
-# plot_above <- function(chr, pos, kp, y, ...){
-#   kpPoints(kp, chr=chr, x=pos, y=y, ...)
-# }
-# norepeats %>%
-#   pwalk(plot_above, kp=kp, y = .5, col = "green")
+# genome <- toGRanges("chromosomes.txt")
+# bands <- toGRanges("genes.txt")
+# withrepeats <- read_tsv("positions_with_repeats.txt", col_names=c("chr","pos"))
+# norepeats <- read_tsv("positions_no_repeats.txt", col_names=c("chr","pos"))
+# genes <- read_tsv("genes.txt") %>%
+#   group_by(chr)
 # 
-# withrepeats %>%
-#   pwalk(plot_above, kp=kp, y = .2)
+# in_range_ <- function(chrm, pos, genes){
+#   rnges <- genes %>% filter(chr == chrm)
+#   btwn <- function(pos, start, end){between(pos,start,end)}
+#   result <- map2(rnges$start,rnges$end, ~ btwn(pos,.x,.y))
+#   return(TRUE %in% result)
+# }
+# in_range <- function(chrm,pos,genes){
+#   return(map2(chrm,pos,~ in_range_(.x,.y,genes)))
+# }
+# 
+# variant_table <- norepeats %>%
+#   mutate(repeatregion = FALSE) %>%
+#   right_join(withrepeats) %>%
+#   mutate(repeatregion = is.na(.$repeatregion)) %>%
+#   mutate(ingene = unlist(in_range(chr,pos,genes)))
 
-kpPoints(kp, chr=withrepeats$chr, x=withrepeats$pos, y=.2)
-kpPoints(kp, chr=norepeats$chr, x=norepeats$pos, y = .5, col = "green")
-dev.off()
-
-in_range_ <- function(chrm, pos, genes){
-  rnges <- genes %>% filter(chr == chrm)
-  btwn <- function(pos, start, end){between(pos,start,end)}
-  result <- map2(rnges$start,rnges$end, ~ btwn(pos,.x,.y))
-  return(TRUE %in% result)
-}
-in_range <- function(chrm,pos,genes){
-  return(map2(chrm,pos,~ in_range_(.x,.y,genes)))
-}
-
-variant_table <- norepeats %>%
-  mutate(repeatregion = FALSE) %>%
-  right_join(withrepeats) %>%
-  mutate(repeatregion = is.na(.$repeatregion)) %>%
-  mutate(ingene = unlist(in_range(chr,pos,genes)))
-
-write_tsv(variant_table, "variant_table.tsv")
-
+vcffile <- "passed.vcf"
+fastafile <- "e_mel_3.fa"
+gfffile <- "e_mel_3_genes.gff3"
+repeatsgfffile <- "e_mel_3_repeats.gff3"
 # this may break if tidyverse is loaded??
-vcf <- readVcf("passed.vcf","e_mel_3.fa")
-gff <- GenomicFeatures::makeTxDbFromGFF("e_mel_3_genes.gff3")
+# vcf <- readVcf(vcffile,fastafile)
+gff <- GenomicFeatures::makeTxDbFromGFF(gfffile)
 locs <- locateVariants(vcf,gff,AllVariants())
-fa <- FaFile("e_mel_3.fa")
-indexFa("e_mel_3.fa")
+fa <- FaFile(fastafile)
+indexFa(fastafile)
 coding <- predictCoding(vcf,gff,seqSource=fa)
+
+#overlapsAny(locs, genes(gff)) seems to do what i want
+
 
 # load tidy things here
 positions <- as_tibble(start(ranges(coding)))
@@ -77,7 +66,6 @@ type <- locs %>%
   distinct()
 
 coding <- coding %>%
-  # mutate(ALT = unlist(map(coding$ALT, ~ as.character(.))))
   select(chr, pos, CONSEQUENCE, REFAA, VARAA)
 
 variant_table <- variant_table %>%
