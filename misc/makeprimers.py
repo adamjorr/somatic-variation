@@ -33,7 +33,7 @@ def make_primer_for_record(record, referencedict, exclusions):
     }
 
     if exclusions is not None:
-        ex = exclusions[pos]
+        ex = exclusions[chrom]
         seq_args['SEQUENCE_EXCLUDED_REGION'] = [e for e in ex if e is not [pos,1]]
 
     global_args = {
