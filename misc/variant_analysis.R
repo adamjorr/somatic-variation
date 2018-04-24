@@ -4,6 +4,7 @@ library(IRanges)
 library(GenomicRanges)
 library(GenomicFeatures)
 library(tidyverse)
+library(rtracklayer)
 
 args <- commandArgs(trailingOnly = TRUE)
 
