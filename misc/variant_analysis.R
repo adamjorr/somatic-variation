@@ -3,7 +3,6 @@ library(VariantAnnotation)
 library(IRanges)
 library(GenomicRanges)
 library(GenomicFeatures)
-library(tidyverse)
 library(rtracklayer)
 
 args <- commandArgs(trailingOnly = TRUE)
@@ -21,6 +20,9 @@ repeatgff <- import.gff3(repeatsgfffile)
 locs <- locateVariants(vcf,gff,AllVariants())
 fa <- FaFile(fastafile)
 coding <- predictCoding(vcf,gff,seqSource=fa)
+
+#load tidyverse (locateVariants breaks if you load too early)
+library(tidyverse)
 
 #tibbles of useful data
 gts <- as.tibble(geno(genotypeCodesToNucleotides(vcf))$GT)
