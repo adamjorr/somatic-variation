@@ -3,7 +3,7 @@ library(phytools)
 library(ggplot2)
 
 alignment = "~/Documents//github/somatic-variation/results/filtered_bed_excluded_no_s.fa"
-iqtree = "/Users/roblanfear/Documents/github/somatic-variation/variant_analyses/IQtree/iqtree" # mac version by default
+iqtree = "/Users/roblanfear/Documents/github/somatic-variation/variant_analyses/analysis0/iqtree" # mac version by default
 
 # make alignments with zero to 5 gaps per column, and run IQ tree on each
 
