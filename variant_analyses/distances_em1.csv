@@ -1,0 +1,16 @@
+node,ancestor,distance_cm,node.type,branch
+M1,MD,698,tip,D->M1
+M2,MD,638,tip,D->M2
+M3,MC,796,tip,C->M3
+M4,MB,844,tip,B->M4
+M5,ME,1297,tip,E->M5
+M6,MG,928,tip,G->M6
+M7,MG,978,tip,G->M7
+M8,MF,1029,tip,F->M8
+MD,MC,75,internal,C->D
+MC,MB,773,internal,B->C
+MB,MA,372,internal,A->B
+MG,MF,111,internal,F->G
+MF,ME,112,internal,E->F
+ME,MA,358,internal,A->E
+MA,ground,50,internal,ground->A
