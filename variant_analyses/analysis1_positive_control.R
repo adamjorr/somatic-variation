@@ -9,7 +9,7 @@ dir.create(outdir)
 # these files should exist prior to the anlaysis
 alignment = "~/Documents/github/somatic-variation/variant_analyses/analysis0_alignments/aln_0gaps.fa"
 true.tree = "~/Documents/github/somatic-variation/variant_analyses/tree_em1_physical_structure.phy"
-iqtree = "/Users/roblanfear/Documents/github/somatic-variation/variant_analyses/iqtree" # mac version by default
+iqtree = "~/Documents/github/somatic-variation/variant_analyses/iqtree" # mac version by default
 
 
 ################ Analysis 1 #####################
