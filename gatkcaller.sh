@@ -126,10 +126,9 @@ fi
 $PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
 
 #GATK TO RECALIBRATE QUAL SCORES + CALL VARIANTS
-$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}
-$PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
+gatk SplitIntervals -R ${REFERENCEFILE} --scatter-count $CORES -L scaffold_1  -L scaffold_2 -L scaffold_3 -L scaffold_4 -L scaffold_5 -L scaffold_6 -L scaffold_7 -L scaffold_8 -L scaffold_9 -L scaffold_10 -L scaffold_11 -O ${SCATTEREDINTERVALDIR}
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list')
-parallel --halt 2 ${GATK} HaplotypeCaller --heterozygosity=${HET} -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} ${BEDFILE} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS
+parallel --halt 2 ${GATK} HaplotypeCaller --heterozygosity ${HET} -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} ${BEDFILE} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS
 
 $PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
 rm $SCATTEREDFIRSTCALLS ${SORTEDFIRSTCALLS}.idx
@@ -138,10 +137,8 @@ ${GATK} BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BE
 rm $SORTEDFIRSTCALLS
 ${GATK} ApplyBQSR -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --bqsr-recal-file ${RECALDATATABLE} -O $RECALIBRATEDBAM
 rm $DEDUPLIFIEDBAM $RECALDATATABLE
-parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} ${BEDFILE} --heterozygosity 0.025 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
+parallel --halt 2 ${GATK} HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} ${BEDFILE} --heterozygosity 0.025 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
 rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
-# java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${OUTFILE} ${CMDOUTCALLS}
-# bcftools concat -a -Ov -o ${OUTCALLS} ${SCATTEREDOUTCALLS}
 $PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}
 
 exit 0
