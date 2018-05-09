@@ -9,7 +9,7 @@ USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-b BE
 
 #Here are some things you might want to change:
 PICARD="picard" #How do I call picard on this system?
-GATK=~/bin/GenomeAnalysisTK.jar #Location of your GATK jar
+GATK="gatk" #How do I call GATK on this system?
 CORES=48
 TMPOPTION=""
 OUTFILE=/dev/stdout
@@ -17,6 +17,7 @@ NUMNS=30
 BEDFILE=""
 REFERENCEFILE=""
 FILEIN=""
+HET="0.025"
 trap "exit 1" ERR
 
 while getopts :t:p:g:d:b:o:r:i:h opt; do
@@ -74,12 +75,15 @@ if [ "$REFERENCEFILE" == "" ]; then
 	exit 1
 fi
 
-if [ "FILEIN" == "" ]; then
+if [ "$FILEIN" == "" ]; then
 	echo $USAGE >&2
 	echo "Input file required." >&2
 	exit 1
 fi
 
+if [ "$TMPOPTION" != "" ]; then
+	mkdir -p $TMPOPTION #ensure temp directory exists if set
+fi
 
 TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
 # trap "rm -rf $TMPDIR" EXIT INT TERM HUP
@@ -125,15 +129,14 @@ $PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
 $PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}
 $PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.interval_list')
-parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} ${BEDFILE} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS
-# java -cp ${GATK} org.broadinstitute.gatk.tools.CatVariants -R ${REFERENCEFILE} --outputFile ${JOINEDFIRSTCALLS} ${CMDFIRSTCALLS}
-# bcftools concat -a -Ov -o ${JOINEDFIRSTCALLS} ${SCATTEREDFIRSTCALLS}
+parallel --halt 2 ${GATK} HaplotypeCaller --heterozygosity=${HET} -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM -L {1} ${BEDFILE} -stand_call_conf 50 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDFIRSTCALLS
+
 $PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
 rm $SCATTEREDFIRSTCALLS ${SORTEDFIRSTCALLS}.idx
-# rm $JOINEDFIRSTCALLS
-java -jar ${GATK} -T BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
+
+${GATK} BaseRecalibrator -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --knownSites $SORTEDFIRSTCALLS -o $RECALDATATABLE
 rm $SORTEDFIRSTCALLS
-java -jar ${GATK} -T PrintReads -nct $CORES -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} -BQSR $RECALDATATABLE -EOQ -o $RECALIBRATEDBAM
+${GATK} ApplyBQSR -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --bqsr-recal-file ${RECALDATATABLE} -O $RECALIBRATEDBAM
 rm $DEDUPLIFIEDBAM $RECALDATATABLE
 parallel --halt 2 java -jar ${GATK} -T HaplotypeCaller --pair_hmm_implementation LOGLESS_CACHING -R ${REFERENCEFILE} -I $RECALIBRATEDBAM -L {1} ${BEDFILE} --heterozygosity 0.025 -ploidy 2 -o {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
 rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
