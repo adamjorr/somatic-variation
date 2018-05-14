@@ -20,7 +20,7 @@ outdir = "~/Documents/github/somatic-variation/variant_analyses/analysis3_compar
 dir.create(outdir)
 
 # estimated diploid genome size for E. melliodora in bp
-genome.size = 1000000000 
+genome.size = 500000000 
 
 
 ################ Analysis 3.1 #####################
@@ -189,3 +189,4 @@ mutations.per.generation.p
 
 mutations.per.generation.ml / genome.size
 mutations.per.generation.p / genome.size
+
