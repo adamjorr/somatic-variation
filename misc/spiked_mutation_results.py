@@ -110,7 +110,7 @@ def main():
     print "\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered"])
     with open(mutfile) as fh:
         for l in fh:
-            outline = generate_table_line(l, muts, vcf, sam)
+            outline = generate_table_line(l, muts, vcf, sam, bed)
             if outline != None:
                 print "\t".join(outline)
 
