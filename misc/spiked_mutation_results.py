@@ -2,6 +2,9 @@
 import pysam
 import vcf
 import sys
+import argparse
+import pybedtools
+from pybedtools import BedTool
 
 def load_muts():
     sample_files = ["mut_files/mut_M" + str(k) + ".txt" for k in range(1,9)] #get every file
@@ -12,8 +15,7 @@ def load_muts():
             muts.append(d)
     return muts #a list of lists of lists
 
-def load_vcf():
-    vcffile = "repfiltered_only_mutated.vcf.gz"
+def load_vcf(vcffile = "repfiltered_only_mutated.vcf.gz"):
     vcfreader = vcf.Reader(filename = vcffile)
     vcflocs = dict()
     for record in vcfreader:
@@ -22,9 +24,16 @@ def load_vcf():
         vcflocs[record.CHROM] = d
     return vcflocs
 
-def load_sam():
-    samfile = "fixed_alignment.bam"
+def load_sam(samfile = "fixed_alignment.bam"):
     return pysam.AlignmentFile(samfile, "rb")
+
+def load_bed(bedfile):
+    bed = BedTool(bedfile)
+    bedranges = dict() #dictionary with bedranges[chr] = [range(x,y), range(z,a), ...]
+    for interval in bed:
+        l = bedranges.setdefault(interval.chrom, []) #list
+        bedranges[interval.chrom] = l + [range(interval.start+1, interval.stop+1)] #switch BED to 1-based
+    return bedranges
 
 def position_depth(samfile, chr, position):
     regionstr = str(chr) + ':' + str(position) + '-' + str(position)
@@ -41,7 +50,7 @@ def position_depth(samfile, chr, position):
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
 """
-def generate_table_line(line, muts, vcf, sam):
+def generate_table_line(line, muts, vcf, sam, bed):
     l = line.rstrip().split()
     loc = [l[0], int(l[1])]
     gt = l[2:4]
@@ -50,6 +59,10 @@ def generate_table_line(line, muts, vcf, sam):
     mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i-1]] #sample names are 1-based
     if mutated_samples == []:
         return None
+
+    inrepeat = False
+    if loc[0] in bed:
+        inrepeat = any([loc[1] in r for r in bed[loc[0]]])
 
     recovered = False
     if loc[0] in vcf:
@@ -66,12 +79,32 @@ def generate_table_line(line, muts, vcf, sam):
             else: #if we make it through the loop, we recovered the mutation
                 recovered = True
 
-    return loc[0], str(loc[1]), ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered)
+    return loc[0], str(loc[1]), ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered), str(inrepeat)
+
+def argparser():
+    parser = argparse.ArgumentParser(description =
+        """
+        Generate a table to estimate callability using a mutation table, VCF and SAM file.
+        The mutation tables must be in a subdirectory called mut_files.
+        The output table is printed to STDOUT.
+        """)
+    #parser.add_argument("-m","--mutfile")
+    parser.add_argument("-v","--vcffile", help = "vcf file")
+    parser.add_argument("-s","--samfile", help = "sam/bam file")
+    parser.add_argument("-b","--bedfile", help = "BED file containing repeat regions", )
+
+    args = parser.parse_args()
+    return args
 
 def main():
+    args = argparser()
+    vcffile = args.vcffile
+    samfile = args.samfile
+    bedfile = args.bedfile
     muts = load_muts() #open all mut files and load into list
-    vcf = load_vcf()
-    sam = load_sam()
+    vcf = load_vcf(vcffile) if vcffile is not None else load_vcf()
+    sam = load_sam(samfile) if samfile is not None else load_sam()
+    bed = load_bed(bedfile)
 
     mutfile = "mut_files/mutfile.txt" #iterate through full list and generate table
     print "\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered"])
