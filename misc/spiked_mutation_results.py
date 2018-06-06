@@ -50,13 +50,14 @@ def position_depth(samfile, chr, position):
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
 """
-def generate_table_line(line, muts, vcf, sam, bed):
+def generate_table_line(line, muts, vcf, sam, bed, dng = False):
     l = line.rstrip().split()
     loc = [l[0], int(l[1])]
     gt = l[2:4]
     togt = set(l[4:6])
     depth = position_depth(sam, l[0], l[1])
-    mutated_samples = ["M" + str(i) for i in range(1,9) if loc in muts[i-1]] #sample names are 1-based
+    #in dng, there is SM/M1, SM/M2, etc. Otherwise, the samples are M1a, M2a, M3a ... etc
+    mutated_samples = (["M" + str(i) + "a" for i in range(1,9) if loc in muts[i-1]] if not dng else ["SM/M" + str(i) for i in range(1,9) if loc in muts[i-1]]) #sample names are 1-based
     if mutated_samples == []:
         return None
 
@@ -70,7 +71,7 @@ def generate_table_line(line, muts, vcf, sam, bed):
         if loc[1] in chrd:
             record = chrd[loc[1]]
             for s in mutated_samples:
-                vcfgt = record.genotype(s + "a").gt_bases # add a because the samples are M1a, M2a, etc.
+                vcfgt = record.genotype(s).gt_bases
                 if vcfgt == None:
                     break
                 vcfg = set(vcfgt.split("/"))
@@ -91,7 +92,8 @@ def argparser():
     #parser.add_argument("-m","--mutfile")
     parser.add_argument("-v","--vcffile", help = "vcf file")
     parser.add_argument("-s","--samfile", help = "sam/bam file")
-    parser.add_argument("-b","--bedfile", help = "BED file containing repeat regions", )
+    parser.add_argument("-b","--bedfile", help = "BED file containing repeat regions")
+    parser.add_argument("--dng", action = 'store_true', help = "Expect dng-style VCF, where the sample is coded as SM/MX rather than MXa")
 
     args = parser.parse_args()
     return args
@@ -110,7 +112,7 @@ def main():
     print "\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered"])
     with open(mutfile) as fh:
         for l in fh:
-            outline = generate_table_line(l, muts, vcf, sam, bed)
+            outline = generate_table_line(l, muts, vcf, sam, bed, args.dng)
             if outline != None:
                 print "\t".join(outline)
 
