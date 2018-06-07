@@ -100,7 +100,7 @@ def argparser():
     parser.add_argument("-v","--vcffile", help = "vcf file")
     parser.add_argument("-s","--samfile", help = "sam/bam file")
     # parser.add_argument("-b","--bedfile", help = "BED file containing repeat regions")
-    parser.add_arugment("-r","--repeatfile", help = "File containing mutated locations in repeat regions.")
+    parser.add_argument("-r","--repeatfile", help = "File containing mutated locations in repeat regions.")
     parser.add_argument("--dng", action = 'store_true', help = "Expect dng-style VCF, where the sample is coded as SM/MX rather than MXa")
 
     args = parser.parse_args()
