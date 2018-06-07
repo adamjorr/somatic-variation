@@ -110,7 +110,7 @@ def main():
     args = argparser()
     vcffile = args.vcffile
     samfile = args.samfile
-    bedfile = args.bedfile
+    bedfile = args.repeatfile
     muts = load_muts() #open all mut files and load into list
     vcf = load_vcf(vcffile) if vcffile is not None else load_vcf()
     sam = load_sam(samfile) if samfile is not None else load_sam()
