@@ -69,6 +69,7 @@ def generate_table_line(line, muts, vcf, sam, repeats, dng = False):
     inrepeat = (loc in repeats)
 
     recovered = False
+    nunknown = 0
     if loc[0] in vcf:
         chrd = vcf[loc[0]]
         if loc[1] in chrd:
