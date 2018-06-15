@@ -7,6 +7,7 @@
 library(ape)
 library(phangorn)
 library(dplyr)
+library(stringr)
 
 ids = c("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8")
 reps = c("a", "b", "c")
@@ -14,7 +15,9 @@ labels = expand.grid(reps, ids)
 names(labels) = c("original.rep", "original.branch")
 labels$original.id = paste(labels[,2], labels[,1], sep="")
 
-tree = read.tree("~/Documents/github/somatic-variation/variant_analyses/tree_em1_physical_structure.phy")
+treestr = "(((((M1a:0,M1b:0,M1c:0)M1:698,(M2a:0,M2b:0,M2c:0)M2:638)MD:75,(M3a:0,M3b:0,M3c:0)M3:796)MC:773,(M4a:0,M4b:0,M4c:0)M4:844)MB:372,((((M7a:0,M7b:0,M7c:0)M7:978,(M6a:0,M6b:0,M6c:0)M6:928)MG:111,(M8a:0,M8b:0,M8c:0)M8:1029)MF:112,(M5a:0,M5b:0,M5c:0)M5:1297)ME:358)MA:0;"
+
+tree = read.tree(text=str_replace_all(treestr, "\\([^()]+\\)",""))
 
 shuffle.tree = function(original.tree){
     # shuffle tip labels on a tree until the new tree shares NO splits with the old one
@@ -56,3 +59,13 @@ shuffle.labels = function(original.labels){
 
 new.labels = shuffle.labels(labels)
 new.tree = shuffle.tree(tree)
+
+new.tree.str = write.tree(new.tree)
+
+for(i in ids) {
+    labs = new.labels %>% filter(original.branch == i) %>% pull(new.id)
+    s = str_c(labs,":0",collapse=",")
+    pattern = sprintf("%s:",i)
+    replacement = sprintf("(%s)%s:", s, i)
+    new.tree.str = str_replace(new.tree.str, pattern, replacement)
+}
