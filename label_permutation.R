@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # this script produces permutations of samples such that
 # the new permutation shares no splits in common with the original
 # and replicates are are permuted at random, as long as 
