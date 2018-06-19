@@ -69,3 +69,5 @@ for(i in ids) {
     replacement = sprintf("(%s)%s:", s, i)
     new.tree.str = str_replace(new.tree.str, pattern, replacement)
 }
+
+cat(new.tree.str, "\n")
