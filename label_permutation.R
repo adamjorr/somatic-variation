@@ -4,10 +4,10 @@
 # they satisfy the condition that no one set of 3 replicates can
 # have >1 replicate from a single sample
 
-library(ape)
-library(phangorn)
-library(dplyr)
-library(stringr)
+suppressPackageStartupMessages(library(ape))
+suppressPackageStartupMessages(library(phangorn))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(stringr))
 
 ids = c("M1", "M2", "M3", "M4", "M5", "M6", "M7", "M8")
 reps = c("a", "b", "c")
