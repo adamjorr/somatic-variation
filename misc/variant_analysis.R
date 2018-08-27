@@ -33,7 +33,7 @@ variant_table <- tibble(chr = as.character(seqnames(vcf)),
                         ingene = overlapsAny(vcf, genes(gff)),
                         coding = overlapsAny(vcf, coding),
                         ref = as.character(rowRanges(vcf)$REF),
-                        alt = as.character(unlist(rowRanges(vcf)$ALT))
+                        alt = unstrsplit(CharacterList(rowRanges(vcf)$ALT), sep = ",")
                         )
 
 codingdf <- tibble(chr = as.character(seqnames(coding)),
