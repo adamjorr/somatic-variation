@@ -1,8 +1,8 @@
 IQ-TREE 1.5.5 built Jun  2 2017
 
-Input file name: /Users/roblanfear/Documents/github/somatic-variation/variant_analyses/analysis3_compare_brlens//aln_0gaps.fa
+Input file name: /Users/roblanfear/Documents/github/somatic-variation/variant_analyses/analysis2_compare_brlens//aln_0gaps.fa
 Type of analysis: tree reconstruction
-Random seed number: 985483
+Random seed number: 626713
 
 REFERENCES
 ----------
@@ -88,7 +88,7 @@ Tree in newick format:
 TIME STAMP
 ----------
 
-Date and time: Mon May 14 14:00:07 2018
-Total CPU time used: 0.028172 seconds (0h:0m:0s)
-Total wall-clock time used: 0.0319521 seconds (0h:0m:0s)
+Date and time: Tue Sep 11 12:18:45 2018
+Total CPU time used: 0.028325 seconds (0h:0m:0s)
+Total wall-clock time used: 0.0309839 seconds (0h:0m:0s)
 

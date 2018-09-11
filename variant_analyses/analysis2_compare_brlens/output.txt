@@ -1,0 +1,18 @@
+
+Call:
+lm(formula = edges$physical ~ edges$parsimony - 1)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-5.186 -1.728  2.028  6.308  7.730 
+
+Coefficients:
+                Estimate Std. Error t value Pr(>|t|)    
+edges$parsimony   0.8262     0.1750   4.721 0.000496 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 4.818 on 12 degrees of freedom
+Multiple R-squared:   0.65,	Adjusted R-squared:  0.6208 
+F-statistic: 22.28 on 1 and 12 DF,  p-value: 0.0004964
+

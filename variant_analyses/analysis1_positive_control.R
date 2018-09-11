@@ -47,7 +47,7 @@ pvals = lapply(true.pds, get_p, all.pds = all.pds)
 
 # Now let's get the maximum likelihood tree for that alignment.
 # run IQ-TREE with default settings and 1000 bootstraps
-command = paste(iqtree, "-s", file.path(outdir, "aln_0gaps.fa"), "-b 1000 -safe", sep=" ")
+command = paste(iqtree, "-s", file.path(outdir, "aln_0gaps.fa"), "-b 1000 -safe -redo -m JC", sep=" ")
 system(command)
 ml.tree.file = file.path(outdir, "aln_0gaps.fa.treefile")
 
@@ -79,15 +79,16 @@ pdf(file.path(outdir, "positive_control_figure.pdf"), width=7, height=5)
 p1
 dev.off()
 
-# results 
-# TODO include parsimony score here
-r = data.frame(path.distance = true.pds, p.value = unlist(pvals), tree = write.tree(best.trees), type = "maximum parsimony")
+# Write a table of results to best_trees.tsv
+r = data.frame(path.distance = true.pds, parsimony.score = scores[best], p.value = unlist(pvals), tree = write.tree(best.trees), type = "maximum parsimony")
 
 r$tree = as.character(r$tree)
 r$type = as.character(r$type)
 
-ml = c(ml.pd, ml.pval, write.tree(ml.tree), "maximum likelihood")
+ml = c(ml.pd, NA, ml.pval, write.tree(ml.tree), "maximum likelihood")
 
 r = rbind(r, ml)
 
 write.table(r, file.path(outdir, "best_trees.tsv"), quote=FALSE, sep='\t', col.names = NA)
+
+
