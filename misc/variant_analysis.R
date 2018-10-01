@@ -87,7 +87,7 @@ variant_table <- variant_table %>%
   left_join(codingdf, on=c("chr","pos")) %>%
   mutate(upstreamkb = unlist(map2(.$chr,.$pos,~as.character(getSeq(fa,GRanges(seqnames = .x, IRanges(start = .y - 1000, end = .y - 1))))))) %>%
   bind_cols(gts) %>%
-  bind_cols(mutated_node = mutated_node)
+  bind_cols(mutated_node = mutated_node) %>%
   mutate(downstreamkb = unlist(map2(.$chr,.$pos, ~as.character(getSeq(fa,GRanges(seqnames = .x, IRanges(start = .y + 1 , end = .y + 1000)))))))
 
 write_tsv(variant_table,"variants.tsv")
