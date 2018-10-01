@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+library(karyoploteR)
 library(VariantAnnotation)
 library(IRanges)
 library(GenomicRanges)
