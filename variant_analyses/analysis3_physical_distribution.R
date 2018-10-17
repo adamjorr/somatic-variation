@@ -134,7 +134,7 @@ p1
 dev.off()
 
 rank = length(which(mean_reps$mean_interval < mean_obs))
-p = rank/100
+p = (100-rank)/50 # two-tailed test
 
 p
 
