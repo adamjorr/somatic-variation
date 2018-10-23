@@ -16,7 +16,7 @@ opp2 <- matrix(opp, nrow = dim(mut)[1], ncol = dim(mut)[2], byrow = TRUE)
 
 signatures <- signeR(M = mut, Opport = opp2, nsig = 1)
 
-pdf("context.pdf")
-SignPlot(signatures$SignExposures)
-dev.off()
+#pdf("context.pdf", width = 11, height = 7)
+SignPlot(signatures$SignExposures, plot_to_file = TRUE, plots_per_page = 1)
+#dev.off()
 
