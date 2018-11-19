@@ -12,6 +12,16 @@ bedtools genomecov -max 1 -i e_mel_3_genes.resort.bed -g <(head -n11 /storage/20
  * `MC_closest_genes.txt` : Just genes in `MC_closest_featutes.bed` and fewer columns
  * `MC_genes_phytozome_descriptions.tsv` : Manually queried phytozome for genes in `MC_closest_genes.txt`
 
+# Number of unmapped reads
+```bash
+find . -name 'e_mel_*.bam' -or -wholename './alignment.bam' | parallel --tag samtools view -c -f 4 {}
+```
+
+ * ./e_mel_3/e_mel_3.bam   59110579                          
+ * ./e_mel_2/e_mel_2.bam   61278970                 
+ * ./e_mel_1/e_mel_1.bam   66949528                                                                                                           
+ * ./alignment.bam 85187119
+
 # Number of Q=0 reads
 ```bash
 for i in $( find . -name 'e_mel_*.bam' -or -wholename './alignment.bam' );
