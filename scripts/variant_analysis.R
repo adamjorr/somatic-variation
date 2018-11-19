@@ -35,26 +35,55 @@ tree$tip.label <- tree$tip.label %>%
 gts <- as.tibble(geno(genotypeCodesToNucleotides(vcf))$GT)
 
 #> plyr::count(str_count(unlist(gts[1,]), pattern = unlist(gts[1,1]))) %>% dplyr::top_n(-1, freq) %>% dplyr::select(matches('x'))
+#leastcommon_gt <- function(gts){
+#  gts %>%
+#    unlist() %>%
+#    plyr::count() %>%
+#    dplyr::top_n(-1, freq) %>%
+#    dplyr::select(matches('x'))
+#}
+
+#leastcommon <- gts %>%
+#  purrr::transpose() %>%
+#  map_dfr(leastcommon_gt)
+
+#mutated_node <- gts %>%
+#  map2_dfc(leastcommon, ~str_detect(.x, pattern = .y)) %>%
+#  purrr::transpose() %>%
+#  map(~names(.[unlist(.)])) %>%
+#  map(~str_replace_all(., pattern = "^.*/M", replacement = "")) %>%
+#  map(~ .[. %in% tree$tip.label]) %>%
+#  map( ~keep.tip(tree, .)$node.label[1]) %>%
+#  unlist()
+
 leastcommon_gt <- function(gts){
-  gts %>%
-    unlist() %>%
-    plyr::count() %>%
-    dplyr::top_n(-1, freq) %>%
-    dplyr::select(matches('x'))
+ gts %>%
+   unlist() %>%
+   plyr::count() %>%
+   dplyr::top_n(-1, freq) %>%
+   dplyr::select(matches('x')) %>%
+   dplyr::slice(1)
 }
 
-leastcommon <- gts %>%
-  purrr::transpose() %>%
-  map_dfr(leastcommon_gt)
+mutated_node <- info(vcf)$DNL
 
-mutated_node <- gts %>%
-  map2_dfc(leastcommon, ~str_detect(.x, pattern = .y)) %>%
-  purrr::transpose() %>%
-  map(~names(.[unlist(.)])) %>%
-  map(~str_replace_all(., pattern = "^.+/M", replacement = "")) %>%
-  map(~ .[. %in% tree$tip.label]) %>%
-  map( ~keep.tip(tree, .)$node.label[1]) %>%
-  unlist()
+if (is.null(mutated_node)) {
+	#this set of variants is not from denovogear
+	leastcommon <- gts %>%
+		purrr::transpose() %>%
+		map_dfr(leastcommon_gt)
+
+	mutated_node <- gts %>%
+		map2_dfc(leastcommon, ~str_detect(.x, pattern = .y)) %>%
+		purrr::transpose() %>%
+		map(~names(.[unlist(.)])) %>%
+		map(~str_replace_all(., pattern = "^M", replacement = "")) %>%
+		map(~str_replace_all(., pattern = "[abc]$", replacement = "")) %>%
+		map(~ .[. %in% tree$tip.label]) %>%
+		map(~keep.tip(tree, .)) %>%
+		map(~ifelse(length(.$tip.label) > 1, .$node.label[1], .$tip.label[1])) %>%
+		unlist()
+}
 
 variant_table <- tibble(chr = as.character(seqnames(vcf)),
                         pos = start(vcf),
@@ -74,6 +103,9 @@ codingdf <- tibble(chr = as.character(seqnames(coding)),
 locsdf <- tibble(chr = as.character(seqnames(locs)),
                  pos = start(locs),
                  locs = as.character(locs$LOCATION))
+
+codingdf <- codingdf %>%
+	unique()
 
 locsdf <- locsdf %>%
   unique() %>%
