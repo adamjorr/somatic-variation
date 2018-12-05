@@ -104,7 +104,7 @@ overlapping_randsites.bam: e_mel_3_randsites.bed alignment.bam
 e_mel_3_randsites.bed: e_mel_3/e_mel_3.fa.fai
 	bedtools random -l 1 -n 150000 -seed 999 -g $< | bedtools sort -faidx $< > $@
 
-e_mel_3_randsites_norepeats.bed: e_mel_3_randsites.bed #liftover/e_mel_3_repeatmask.bed
+e_mel_3_randsites_norepeats.bed: e_mel_3_randsites.bed liftover/e_mel_3_repeatmask.bed
 	bedtools intersect -v -a e_mel_3_randsites.bed -b liftover/e_mel_3_repeatmask.bed > $@
 
 e_mel_3_randsites.regions: e_mel_3_randsites.bed
