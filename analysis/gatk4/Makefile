@@ -1,5 +1,7 @@
 GATKCALLER=../../scripts/gatkcaller.sh
 PLOTTREE=../../scripts/plot_tree.R
+FILTWITHREPLICATES=../../scripts/filt_with_replicates.pl
+VCFTOFA=../../scripts/vcf2fa.sh
 
 %.vcf.gz: %.vcf
 	bgzip -c $< >$@
@@ -21,10 +23,10 @@ repeat-filter.vcf: depth-and-het-filter.vcf ../liftover/e_mel_3_repeatmask.bed
 
 #using diploidify -v has the effect of removing nonvariable and triallelic sites
 replicate-filter-only-variable.vcf: repeat-filter.vcf
-	cat $< | filt_with_replicates.pl -s -g 3 | diploidify.py -t vcf -v >$@
+	cat $< | ${FILTWITHREPLICATES} -s -g 3 | diploidify.py -t vcf -v >$@
 
 replicate-filter-only-variable.fa: replicate-filter-only-variable.vcf
-	cat $< | vcf2fa.sh | diploidify.py -v >$@
+	cat $< | ${VCFTOFA} | diploidify.py -v >$@
 
 raxmltmp := $(shell mktemp -d --tmpdir=$(CURDIR) raxml_XXXXXX)
 %.nwk: %.fa
