@@ -4,15 +4,34 @@ lm(formula = edges$physical ~ edges$parsimony - 1)
 
 Residuals:
    Min     1Q Median     3Q    Max 
--5.186 -1.728  2.028  6.308  7.730 
+-4.360 -1.820  1.848  3.318  6.265 
 
 Coefficients:
                 Estimate Std. Error t value Pr(>|t|)    
-edges$parsimony   0.8262     0.1750   4.721 0.000496 ***
+edges$parsimony  0.73248    0.09828   7.453 7.71e-06 ***
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 
-Residual standard error: 4.818 on 12 degrees of freedom
-Multiple R-squared:   0.65,	Adjusted R-squared:  0.6208 
-F-statistic: 22.28 on 1 and 12 DF,  p-value: 0.0004964
+Residual standard error: 3.433 on 12 degrees of freedom
+Multiple R-squared:  0.8223,	Adjusted R-squared:  0.8075 
+F-statistic: 55.54 on 1 and 12 DF,  p-value: 7.706e-06
+
+
+Call:
+lm(formula = edges$physical ~ edges$parsimony)
+
+Residuals:
+   Min     1Q Median     3Q    Max 
+-4.322 -1.899  1.199  2.518  3.637 
+
+Coefficients:
+                Estimate Std. Error t value Pr(>|t|)  
+(Intercept)       3.1930     1.6766   1.904   0.0833 .
+edges$parsimony   0.4498     0.1731   2.599   0.0247 *
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Residual standard error: 3.109 on 11 degrees of freedom
+Multiple R-squared:  0.3805,	Adjusted R-squared:  0.3241 
+F-statistic: 6.755 on 1 and 11 DF,  p-value: 0.02473
 

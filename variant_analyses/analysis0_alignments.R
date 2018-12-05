@@ -6,7 +6,7 @@ dir.create(outdir)
 
 # input files
 # must exist prior to running this script
-original = "~/Documents//github/somatic-variation/results/filtered_bed_excluded_no_s.fa"
+original = "~/Documents//github/somatic-variation/results/filtered_bed_excluded.fa"
 
 ################ Analysis 0 ########################
 # create alignments with no  gaps #

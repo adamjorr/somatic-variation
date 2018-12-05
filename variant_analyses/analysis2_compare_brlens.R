@@ -41,19 +41,30 @@ edges = merge(physical, parsimony, by = c('X1', 'X2'))
 
 p = root(true.tree.parsimony, resolve.root = T, outgroup = "M1")
 
-ggplot(edges, aes(x = physical, y = parsimony)) + 
+p2 = ggplot(edges, aes(x = physical, y = parsimony)) + 
     geom_smooth(method='lm') + 
     geom_point(size = 3) +
     xlab("physical branch length (M)") + 
     ylab("genetic branch length (mutations)") + 
     xlim(c(0, 15))
 
+
+pdf(file.path(outdir, "brlen_correlation_figure.pdf"), width=7, height=5)
+p2
+dev.off()
+
+
 # regressions forced through the origin
 s = summary(lm(edges$physical ~ edges$parsimony -1))
+s1 = summary(lm(edges$physical ~ edges$parsimony))
 
 sink(file.path(outdir, "output.txt"))
 print(s)
+print(s1)
 sink()
+
+
+
 
 # mean root-to-tip branchlength of true tree
 true.tree.physical = read.tree(true.tree)
