@@ -1,5 +1,5 @@
-GATKCALLER=gatkcaller.sh
-PLOTTREE=plot_tree.R
+GATKCALLER=../../scripts/gatkcaller.sh
+PLOTTREE=../../scripts/plot_tree.R
 
 %.vcf.gz: %.vcf
 	bgzip -c $< >$@
