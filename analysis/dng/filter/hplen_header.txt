@@ -1,0 +1,1 @@
+##INFO=<ID=HPLEN,Number=1,Type=Integer,Description="Haplotype block length">
