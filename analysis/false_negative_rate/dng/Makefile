@@ -21,4 +21,4 @@ mut_files/mutations.tab.gz.tbi: ../mut_files/mutations.tab.gz
 inrepeats.txt: ../mut_files/mutations.tab.gz ../e_mel_3_repeatmask.bed
 	tabix -R $(word 2, $^) $< >$@
 
-include dng_caller.mk
+include ../../dng/Makefile
