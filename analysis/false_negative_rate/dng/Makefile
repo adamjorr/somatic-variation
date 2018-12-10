@@ -7,7 +7,7 @@ INDUCEDMUTRESULTS=../../scripts/spiked_mutation_results.py
 #	gatk ApplyBQSR -I $(word 2, $^) -R $(word 3, $^) --bqsr-recal-file $< -O $@
 
 filter/goodsites.vcf: denovos.vcf.gz
-	cd filter && $(MAKE) goodsites.vcf
+	$(MAKE) -C $(dir $@) $(notdir $@)
 
 results.txt: ../alignment.bam ../alignment.bam.bai ../mut_files/mutfile.txt filter/goodsites.vcf inrepeats.txt
 	$(INDUCEDMUTRESULTS) -s $< -v $(word 4, $^) -r $(word 5, $^) --dng > $@
