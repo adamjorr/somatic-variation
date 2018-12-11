@@ -1,7 +1,8 @@
-GATKCALLER=../../scripts/gatkcaller.sh
-PLOTTREE=../../scripts/plot_tree.R
-FILTWITHREPLICATES=../../scripts/filt_with_replicates.pl
-VCFTOFA=../../scripts/vcf2fa.sh
+SCRIPTDIR=../../scripts
+
+PLOTTREE=$(SCRIPTDIR)/plot_tree.R
+FILTWITHREPLICATES=$(SCRIPTDIR)/filt_with_replicates.pl
+VCFTOFA=$(SCRIPTDIR)/vcf2fa.sh
 
 %.vcf.gz: %.vcf
 	bgzip -c $< >$@
@@ -9,13 +10,10 @@ VCFTOFA=../../scripts/vcf2fa.sh
 %.vcf.gz.csi: %.vcf.gz
 	bcftools index $<
 
-var-calls.vcf: ../e_mel_3/e_mel_3.fa ../alignment.dedup.bam
-	mkdir -p ./tmp/; ${GATKCALLER} -d ./tmp/ -o $@ -r $< -i $(word 2, $^)
+var-calls.vcf: ../alignment.dedup.bam e_mel_3/e_mel_3.fa e_mel_3/e_mel_3.dict
+	mkdir -p calls; parallel --halt 2 gatk HaplotypeCaller --heterozygosity 0.025 -R $(word 2, $^) -I $< -ploidy 2 -L scaffold_{} -O calls/{}_$@ ::: $(shell seq 1 11); picard SortVcf $(foreach num, $(shell seq 1 11), I=calls/$(num)_$@) O=$@ SEQUENCE_DICTIONARY=$(word 3, $^)
 
-first-11-scaffolds.vcf: var-calls.vcf.gz var-calls.vcf.gz.csi
-	bcftools view -r scaffold_1,scaffold_2,scaffold_3,scaffold_4,scaffold_5,scaffold_6,scaffold_7,scaffold_8,scaffold_9,scaffold_10,scaffold_11 -o $@ $<
-
-depth-and-het-filter.vcf: first-11-scaffolds.vcf
+depth-and-het-filter.vcf: var-calls.vcf
 	bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' $< | bcftools view -m2 -M2 -v snps -o $@
 
 repeat-filter.vcf: depth-and-het-filter.vcf ../liftover/e_mel_3_repeatmask.bed

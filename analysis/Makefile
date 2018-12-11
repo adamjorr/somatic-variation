@@ -1,9 +1,14 @@
-READSFOLDER=../data/
+SCRIPTDIR=../scripts
+READSFOLDER=../data/raw/
 CLEANFOLDER=./cleaned_reads/
-NGMALIGNER=../scripts/ngm_aligner.sh
-CREATECONSENSUS=../scripts/create_consensus.sh
-CLEANREADS=../scripts/clean_reads.sh
-DEGENERATESITES=../scripts/degenerate.py
+
+#script locations
+NGMALIGNER=$(SCRIPTDIR)/ngm_aligner.sh
+CREATECONSENSUS=$(SCRIPTDIR)/create_consensus.sh
+CLEANREADS=$(SCRIPTDIR)/clean_reads.sh
+DEGENERATESITES=$(SCRIPTDIR)/degenerate.py
+
+#data
 READS=$(shell find ${READSFOLDER} -name "*.fastq" -and -name "*R1*")
 READNAMES=$(notdir $(READS))
 CORREADS=$(subst .fastq,.cor.fq,$(READNAMES))
@@ -51,22 +56,16 @@ alignment.bam: e_mel_3/e_mel_3.fa
 %.dedup.bam: %.bam
 	picard MarkDuplicates INPUT=$< OUTPUT=$@ METRICS_FILE=$@.metrics.txt CREATE_INDEX=TRUE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000
 
-%.realigned.interval_list: %.dedup.bam e_mel_3/e_mel_3.fa
-	java -jar ~/bin/GenomeAnalysisTK.jar -T RealignerTargetCreator -nt 48 -R $(word 2, $^) -I $< -o $@
+%.dict: %.fa
+	picard CreateSequenceDictionary REFERENCE=$< OUTPUT=$@
 
-%.scattered.intervals/: %.realigned.interval_list
-	mkdir -p $@; picard IntervalListTools I=$< SCATTER_COUNT=32 O=$@
-
-%.realigned.bam: %.dedup.bam e_mel_3/e_mel_3.fa %.realigned.interval_list
-	mkdir -p realn; parallel --halt 2 java -Xmx100G -jar ~/bin/GenomeAnalysisTK.jar -T IndelRealigner -R $(word 2, $^) -I $< -targetIntervals $(word 3, $^) -L scaffold_{} -o realn/{}_$@ ::: $(shell seq 1 11); picard GatherBamFiles $(foreach num, $(shell seq 1 11), I=realn/$(num)_$@) O=$@
-
-%.firstcalls.vcf: %.realigned.bam e_mel_3/e_mel_3.fa e_mel_3/e_mel_3.dict
+%.firstcalls.vcf: %.dedup.bam e_mel_3/e_mel_3.fa e_mel_3/e_mel_3.dict
 	mkdir -p bqsr; parallel --halt 2 gatk HaplotypeCaller --heterozygosity 0.025 -R $(word 2, $^) -I $< -stand-call-conf 50 -ploidy 2 -L scaffold_{} -O bqsr/{}_$@ ::: $(shell seq 1 11); picard SortVcf $(foreach num, $(shell seq 1 11), I=bqsr/$(num)_$@) O=$@ SEQUENCE_DICTIONARY=$(word 3, $^)
 
-%.recal.table: %.firstcalls.vcf %.realigned.bam e_mel_3/e_mel_3.fa
+%.recal.table: %.firstcalls.vcf %.dedup.bam e_mel_3/e_mel_3.fa
 	gatk BaseRecalibrator -I $(word 2, $^) -R $(word 3, $^) --known-sites $< -O $@
 
-%.recal.bam: %.recal.table %.realigned.bam e_mel_3/e_mel_3.fa
+%.recal.bam: %.recal.table %.dedup.bam e_mel_3/e_mel_3.fa
 	gatk ApplyBQSR -I $(word 2, $^) -R $(word 3, $^) --bqsr-recal-file $< -O $@
 
 ###

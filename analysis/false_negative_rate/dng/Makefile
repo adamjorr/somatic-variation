@@ -1,10 +1,14 @@
-INDUCEDMUTRESULTS=../../scripts/spiked_mutation_results.py
+SCRIPTDIR=../../scripts
+INDUCEDMUTRESULTS=$(SCRIPTDIR)/spiked_mutation_results.py
 
 .SECONDARY:
 
 #this is from ../2018-05-08_induced_mutations/alignment.bam
 #recal.bam: recal.table dedup.bam ../e_mel_3/e_mel_3.fa
 #	gatk ApplyBQSR -I $(word 2, $^) -R $(word 3, $^) --bqsr-recal-file $< -O $@
+
+denovos.vcf.gz:
+	$(MAKE) -f '../../dng/Makefile' $($@)
 
 filter/goodsites.vcf: denovos.vcf.gz
 	$(MAKE) -C $(dir $@) $(notdir $@)
@@ -21,4 +25,4 @@ mut_files/mutations.tab.gz.tbi: ../mut_files/mutations.tab.gz
 inrepeats.txt: ../mut_files/mutations.tab.gz ../e_mel_3_repeatmask.bed
 	tabix -R $(word 2, $^) $< >$@
 
-include ../../dng/Makefile
+
