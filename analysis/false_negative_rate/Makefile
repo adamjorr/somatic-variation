@@ -10,7 +10,14 @@ REF=../e_mel_3/e_mel_3.fa
 SAMPLENUMBERS=$(shell seq 1 8)
 MUTBASE=$(addsuffix .txt, $(addprefix mut_M, $(SAMPLENUMBERS)))
 MUTFILES=$(addprefix mut_files/, $(MUTBASE))
-SEDSCRIPTS=$(foreach num, 1 2, $(addsuffix .$(num).sed $(addprefix sed_scripts/, $(MUTBASE))))
+
+#each mutfile will make 6 sed scripts; (paired and 1 for each replicate)
+#file structure: sed_scripts/M1a/mut_M1.txt.R{1,2}.sed
+SEDSCRIPTS=\
+	$(foreach sample, $(SAMPLENUMBERS), \
+	$(foreach rep, a b c, \
+	$(foreach num, 1 2, \
+	$(addsuffix .txt.R$(num).sed sed_scripts/M$(sample)$(rep)/mut_M$(sample)))))
 
 RAWREADSDIR=../../data/raw
 MUTATEDREADSDIR=../../data/mutated
@@ -61,6 +68,9 @@ $(MUTFILES): mut_files/mutfile.txt mut_files/
 
 sed_scripts/:
 	mkdir -p $@
+
+sed_scripts/%/:
+	mkdir -p $@  
 
 #for all the sed scripts: the r1 and r2 of the sed script is made from: the mutfile with the same stem
 $(SEDSCRIPTS): sed_scripts/%.R1.sed sed_scripts/%.R2.sed : $(BAM) -f -r mut_files/% $(REF) sed_scripts/
