@@ -60,31 +60,54 @@ mut_files/mutations.tab.gz.tbi: ../mut_files/mutations.tab.gz mut_files
 mut_files/mutfile.txt: sites_to_mutate.txt mut_files/
 	cd $(word 2, $^) && cat ../$< | $(SETUPMUTATIONS) && cd ..
 
-$(MUTFILES): mut_files/mutfile.txt mut_files/
-	$(SPLITBYTREE) -i $< -o $(word 2, ) -n 1000
+$(MUTFILES): mut_files/mutfile.txt | mut_files/
+	$(SPLITBYTREE) -i $< -o $| -n 1000
 
 #make sed scripts and mutate reads
 ##################################
-
-sed_scripts/:
-	mkdir -p $@
 
 sed_scripts/%/:
 	mkdir -p $@  
 
 #for all the sed scripts: the r1 and r2 of the sed script is made from: the mutfile with the same stem
-$(SEDSCRIPTS): sed_scripts/%.R1.sed sed_scripts/%.R2.sed : $(BAM) -f -r mut_files/% $(REF) sed_scripts/
-	$(INDUCEMUTATIONS) -b 
+#sed scripts look like: sed_scripts/M1a/mut_M1.txt.R1.sed and sed_scripts/M1a/mut_M1.txt.R2.sed
+#the stem ($*) will look like: M1a/mut_M1
+#raw read files look like: $(RAWREADSDIR)/Sample_M1a_index2/M1a_index2_CGATGTAT_L003_R1_001.fastq
+#so for M1a, the raw reads will be
+#	$(RAWREADSDIR)/Sample_$(subst /,,$(dir $*))_*/$(subst /,,$(dir $*))_*_R1_*.fastq and
+#	$(RAWREADSDIR)/Sample_$(subst /,,$(dir $*))_*/$(subst /,,$(dir $*))_*_R2_*.fastq
+#the mutfile looks like mut_files/mut_M1.txt
+$(SEDSCRIPTS): sed_scripts/%.txt.R1.sed sed_scripts/%.txt.R2.sed : $(BAM) \
+	$(RAWREADSDIR)/Sample_$(subst /,,$(dir $*))_*/$(subst /,,$(dir $*))_*_R1_*.fastq \
+	$(RAWREADSDIR)/Sample_$(subst /,,$(dir $*))_*/$(subst /,,$(dir $*))_*_R2_*.fastq \
+	mut_files/$(notdir $*).txt $(REF) | sed_scripts/$(dir $*) :
+		$(INDUCEMUTATIONS) -b $(word 1, $^) -f $(word 2, $^) -r $(word 3, $^) -m $(word 4, $^) -g $(word 5, $^) -o $|
 
-#induce mutations.sh makes 2 files: $(basename $MUTFILE).R1.sed and $(basename $MUTFILE).R2.sed and some log files
+$(MUTATEDREADSDIR):
+	mkdir -p $@
 
+RAWREADS=$(wildcard $(RAWREADSDIR)/*/*.fastq)
 
+#TODO
+#stem is like $(MUTATEDREADSDIR)/Sample_M1a_index2/M1a_index2_CGATGTAT_L003_R1_001.fastq
+#R1 or R2 is $(findstring R1 $*)$(findstring R2 %*)
+#sample: $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample),$*))
+#sample with replicate: $(foreach replicate, a b c, $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample)$(replicate), $*)))
+MYSAMPLE=$(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample),$*))
+MYSAMPLEREP=$(foreach replicate, a b c, $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample)$(replicate), $*)))
+FWDREV=$(findstring R1 $*)$(findstring R2 %*)
+$(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS)) : % : $(subst $(MUTATEDREADSDIR), $(RAWREADSDIR), $*)\
+	sed_scripts/$(MYSAMPLEREP)/mut_$(MYSAMPLE).txt.$(FWDREV).sed
+		sed -f $(word 2, $^) $< > $@
+
+mutatedreads: $(MUTATEDREADSDIR) $(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS))
+.PHONY: mutatedreads
 
 #make alignment, but use mutated reads
 ######################################
 
-alignment.bam: ../e_mel_3/e_mel_3.fa
-	${NGMALIGNER} -q '*.fastq.gz' -d ./tmp/ -r $< -o $@ -i ${MUTATEDREADSDIR}
+alignment.bam: ../e_mel_3/e_mel_3.fa $(MUTATEDREADSDIR) mutatedreads
+	mkdir -p ./tmp/ && ${NGMALIGNER} -q '*.fastq' -d ./tmp/ -r $< -o $@ -i $(word 2, $^)
 
 %.dedup.bam: %.bam
 	picard MarkDuplicates INPUT=$< OUTPUT=$@ METRICS_FILE=$@.metrics.txt CREATE_INDEX=TRUE MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=1000
