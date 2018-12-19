@@ -101,6 +101,7 @@ $(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS)) : % : $(subst $(MUTATED
 		sed -f $(word 2, $^) $< > $@
 
 mutatedreads: $(MUTATEDREADSDIR) $(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS))
+
 .PHONY: mutatedreads
 
 #make alignment, but use mutated reads
