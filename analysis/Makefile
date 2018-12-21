@@ -93,6 +93,9 @@ liftover/e_mel_2_genes.gff3: liftover/e_mel_1_genes.gff3 e_mel_2/e_mel_2.fa
 liftover/e_mel_3_genes.gff3: liftover/e_mel_2_genes.gff3 e_mel_3/e_mel_3.fa
 	liftOver -gff $< e_mel_3.fa.chain $@ /dev/null
 
+liftover/e_mel_3_genes.bed: liftover/e_mel_3_genes.gff3
+	gff2bed <$< >$@
+
 #####
 #generate random sites for simulating mutations
 #####

@@ -21,10 +21,10 @@ repeat-filter.vcf: depth-and-het-filter.vcf ../liftover/e_mel_3_repeatmask.bed
 
 #using diploidify -v has the effect of removing nonvariable and triallelic sites
 replicate-filter-only-variable.vcf: repeat-filter.vcf
-	cat $< | ${FILTWITHREPLICATES} -s -g 3 | diploidify.py -t vcf -v >$@
+	cat $< | $(FILTWITHREPLICATES) -s -g 3 | diploidify.py -t vcf -v >$@
 
 replicate-filter-only-variable.fa: replicate-filter-only-variable.vcf
-	cat $< | ${VCFTOFA} | diploidify.py -v >$@
+	cat $< | $(VCFTOFA) | diploidify.py -v >$@
 
 raxmltmp := $(shell mktemp -d --tmpdir=$(CURDIR) raxml_XXXXXX)
 %.nwk: %.fa
