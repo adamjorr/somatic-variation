@@ -50,6 +50,12 @@ To fully replicate our experiment, you will also need:
  9. liftOver
  10. VCFtools
 
+Notes For Installing Stuff with Conda
+--------------------------------------
+```bash
+conda install -n somatic-variation -c bioconda/label/gcc7 khmer rcorrector nextgenmap samtools bcftools gatk4 raxml bedtools ucsc-liftover vcftools perl-vcftools-vcf parallel whatshap perl-bio-cigar picard pyvcf biopython r-ape r-phytools r-tidyverse r-rcolorbrewer r-vcfr r-phangorn r-doparallel r-dfoptim intermine bioconductor-karyoploter bioconductor-variantannotation bioconductor-iranges bioconductor-genomicranges bioconductor-genomicfeatures bioconductor-rtracklayer pysam pybedtools 
+```
+
 Software Installation
 ---------------------
 ### khmer
