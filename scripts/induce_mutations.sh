@@ -15,12 +15,7 @@
 # gives us a false negative rate for the pipeline.
 #######################################################################################################################
 
-
-
-module load samtools
-
-SCRIPTDIR=/short/xf1/src_big/somatic-variation/misc
-BAMDIR=/short/xf1/Emel/induce_mutations
+SCRIPTDIR="$(dirname "$(readlink -f "$0")")"
 
 #########################  get options and their arguments from command line
 
