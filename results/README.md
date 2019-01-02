@@ -10,7 +10,7 @@ bedtools genomecov -max 1 -i e_mel_3_genes.resort.bed -g <(head -n11 /storage/20
  * `MC_variants.bed` : BED file of positions of variants on the resistant branch
  * `MC_closest_features.bed` : BED file with annotations closest to the positions mutated on the resistant branch
  * `MC_closest_genes.txt` : Just genes in `MC_closest_featutes.bed` and fewer columns
- * `MC_genes_phytozome_descriptions.tsv` : Manually queried phytozome for genes in `MC_closest_genes.txt`
+ * `MC_genes_phytozome_descriptions.tsv` : Phytozome queried for genes in `MC_closest_genes.txt`
 
 # Number of unmapped reads
 ```bash
