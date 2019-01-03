@@ -75,8 +75,9 @@ Doing the Analysis with the provided Makefiles
 ----------------------------------------------
 
 
-
-
+Potential Problems
+------------------
+ * degeneratesites.py is python2
 
 Complete File Structure after everything is made
 ------------------------------------------------
@@ -96,6 +97,9 @@ Complete File Structure after everything is made
  	* :open_file_folder: e_mel_3/ - third round of reference clean up
  		* e_mel_3.bam - cleaned reads aligned to e_mel_2.fa
  		* e_mel_3.fa - consensus called from alignment
+ 		* e_mel_3.bed - e_mel_3 chromosome sizes in BED format
+ 		* e_mel_3_norepeats.bed - e_mel_3 chromosome sizes minus the repeatmask where regions are length >= 200.
+ 		* e_mel_3_norepeats.regions - e_mel_3_norepeats.bed reformatted to the 1-based inclusive region format (chr:start-end)
  	* :open_file_folder: liftover/ - grandis annotations lifted over to coordinates of new references
  		* e_mel_1_repeatmask.gff3
  		* e_mel_2_repeatmask.gff3
@@ -110,13 +114,18 @@ Complete File Structure after everything is made
  	* alignment.firstcalls.vcf - conservative calls made with Haplotypecaller as a first pass
  	* alignment.recal.table - recalibration table for BQSR
  	* alignment.recal.bam - deduped and recalibrated alignment
+ 	* e_mel_3_cds.bed - CDSs in e_mel_3 coordinates. Used for finding degenerate sites
+ 	* :open_file_folder: degenerate/ - finding degenerate sites to estimate model parameters
+ 		* e_mel_3_degenerate.sites
+ 		* e_mel_3_degenerate.bed
+ 	* alignment_norepeats.ad - DeNovoGear pileup of sites at e_mel_3_norepeats.regions
  * :open_file_folder: results/
  * :open_file_folder: scripts/
  * :open_file_folder: 
 
 Extras:
-  :open_file_folder: deprecated/
-  :open_file_folder: variant_analyses/
+  * :open_file_folder: deprecated/
+  * :open_file_folder: variant_analyses/
 
 
 
