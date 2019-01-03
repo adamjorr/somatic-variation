@@ -96,32 +96,6 @@ liftover/e_mel_3_genes.gff3: liftover/e_mel_2_genes.gff3 e_mel_3/e_mel_3.fa
 liftover/e_mel_3_genes.bed: liftover/e_mel_3_genes.gff3
 	gff2bed <$< >$@
 
-#####
-#generate random sites for simulating mutations
-#####
-
-overlapping_randsites.bam: e_mel_3_randsites.bed alignment.bam
-	samtools view -h -b -o $@ -L $< $(word 2, $^)
-
-e_mel_3_randsites.bed: e_mel_3/e_mel_3.fa.fai
-	bedtools random -l 1 -n 150000 -seed 999 -g $< | bedtools sort -faidx $< > $@
-
-e_mel_3_randsites_norepeats.bed: e_mel_3_randsites.bed liftover/e_mel_3_repeatmask.bed
-	bedtools intersect -v -a e_mel_3_randsites.bed -b liftover/e_mel_3_repeatmask.bed > $@
-
-e_mel_3_randsites.regions: e_mel_3_randsites.bed
-	awk '{print $$1":"$$3'} < $< > $@
-
-e_mel_3_randsites_norepeats.regions: e_mel_3_randsites_norepeats.bed
-	awk '{print $$1":"$$3'} < $< > $@
-
-overlapping_randsites.ad: e_mel_3_randsites.regions
-	dng pileup -Q 13 -q 3 -o $@ -r @e_mel_3_randsites.regions -f e_mel_3/e_mel_3.fa overlapping_randsites.bam
-
-overlapping_randsites_norepeats.ad: e_mel_3_randsites_norepeats.regions
-	dng pileup -Q 13 -q 3 -o $@ -r @e_mel_3_randsites_norepeats.regions -f e_mel_3/e_mel_3.fa overlapping_randsites.bam
-
-
 ###
 #get degenerate sites for estimating parameters
 ###
