@@ -56,6 +56,71 @@ Notes For Installing Stuff with Conda
 conda install -n somatic-variation -c bioconda/label/gcc7 khmer rcorrector nextgenmap samtools bcftools gatk4 raxml bedtools ucsc-liftover vcftools perl-vcftools-vcf parallel whatshap perl-bio-cigar picard pyvcf biopython r-ape r-phytools r-tidyverse r-rcolorbrewer r-vcfr r-phangorn r-doparallel r-dfoptim intermine bioconductor-karyoploter bioconductor-variantannotation bioconductor-iranges bioconductor-genomicranges bioconductor-genomicfeatures bioconductor-rtracklayer pysam pybedtools 
 ```
 
+Add to path in the environment, remove from path upon deactivation:
+```bash
+mkdir -p ${CONDA_PREFIX}/etc/conda/activate.d
+mkdir -p ${CONDA_PREFIX}/etc/conda/deactivate.d
+cat >${CONDA_PREFIX}/etc/conda/activate.d/somatic-variation-modpath.sh <<EOF
+export SOMATICVAROLDPATH=${PATH}
+export PATH="$(readlink -f ./scripts/)":${PATH}
+EOF
+
+cat >${CONDA_PREFIX}/etc/conda/deactivate.d/somatic-variation-modpath.sh <<EOF
+export PATH=${SOMATICVAROLDPATH}
+unset SOMATICVAROLDPATH
+EOF
+```
+
+Doing the Analysis with the provided Makefiles
+----------------------------------------------
+
+
+
+
+
+Complete File Structure after everything is made
+------------------------------------------------
+ * :open_file_folder: data/
+ 	* :open_file_folder: e_grandis/ - resources from the e grandis genome
+ 		* ref.fa - *E. grandis* reference
+ 	* :open_file_folder: raw/ - the raw reads
+ 	* :open_file_folder: mutated/ - reads with simulated mutations to determine the false negative rate
+ * :open_file_folder: analysis/
+ 	* :open_file_folder: cleaned_reads/ - a folder containing high confidence reads for cleaning up reference
+ 	* :open_file_folder: e_mel_1/ - first round of reference clean up
+ 		* e_mel_1.bam - cleaned reads aligned to grandis reference
+ 		* e_mel_1.fa - consensus called from alignment
+ 	* :open_file_folder: e_mel_2/ - second round of reference clean up
+ 		* e_mel_2.bam - cleaned reads aligned to e_mel_1.fa
+ 		* e_mel_2.fa - consensus called from alignment
+ 	* :open_file_folder: e_mel_3/ - third round of reference clean up
+ 		* e_mel_3.bam - cleaned reads aligned to e_mel_2.fa
+ 		* e_mel_3.fa - consensus called from alignment
+ 	* :open_file_folder: liftover/ - grandis annotations lifted over to coordinates of new references
+ 		* e_mel_1_repeatmask.gff3
+ 		* e_mel_2_repeatmask.gff3
+ 		* e_mel_3_repeatmask.gff3
+ 		* e_mel_3_repeatmask.bed
+ 		* e_mel_1_genes.gff3
+ 		* e_mel_2_genes.gff3
+ 		* e_mel_3_genes.gff3
+ 		* e_mel_3_genes.bed
+ 	* alignment.bam - raw sequence data aligned to the e_mel_3.fa reference
+ 	* alignment.dedup.bam - alignment.bam deduped with picard
+ 	* alignment.firstcalls.vcf - conservative calls made with Haplotypecaller as a first pass
+ 	* alignment.recal.table - recalibration table for BQSR
+ 	* alignment.recal.bam - deduped and recalibrated alignment
+ * :open_file_folder: results/
+ * :open_file_folder: scripts/
+ * :open_file_folder: 
+
+Extras:
+  :open_file_folder: deprecated/
+  :open_file_folder: variant_analyses/
+
+
+
+
 Software Installation
 ---------------------
 ### khmer
