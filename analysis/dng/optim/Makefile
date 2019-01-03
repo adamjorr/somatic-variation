@@ -26,7 +26,7 @@ all: bed vcf
 
 bed: $(BEDS)
 
-$(BEDS): %.bed : e_mel_3_degenerate-fixed.bed
+$(BEDS): %.bed : ../../degenerate/e_mel_3_degenerate.bed
 	grep -e '^$*\b' $< > $@
 
 vcf: $(VCFS)
