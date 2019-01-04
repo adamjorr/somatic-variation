@@ -99,7 +99,7 @@ Complete File Structure after everything is made
  		* e_mel_3.fa - consensus called from alignment
  		* e_mel_3.bed - e_mel_3 chromosome sizes in BED format
  		* e_mel_3_norepeats.bed - e_mel_3 chromosome sizes minus the repeatmask where regions are length >= 200.
- 		* e_mel_3_norepeats.regions - e_mel_3_norepeats.bed reformatted to the 1-based inclusive region format (chr:start-end)
+ 		* e_mel_3_norepeats.regions - e_mel_3_norepeats.bed reformatted to the 1-based inclusive format (chr:start-end)
  	* :open_file_folder: liftover/ - grandis annotations lifted over to coordinates of new references
  		* e_mel_1_repeatmask.gff3
  		* e_mel_2_repeatmask.gff3
@@ -119,6 +119,12 @@ Complete File Structure after everything is made
  		* e_mel_3_degenerate.sites
  		* e_mel_3_degenerate.bed
  	* alignment_norepeats.ad - DeNovoGear pileup of sites at e_mel_3_norepeats.regions
+ 	* *TODO*
+ 	* :open_file_folder: dng
+ 	* :open_file_folder: false_negative_rate
+ 	* :open_file_folder: false_positive_rate
+ 	* :open_file_folder: gatk4
+ 	* :open_file_folder: variant_table
  * :open_file_folder: results/
  * :open_file_folder: scripts/
  * :open_file_folder: 
