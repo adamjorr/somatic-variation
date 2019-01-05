@@ -78,12 +78,15 @@ Doing the Analysis with the provided Makefiles
 Potential Problems
 ------------------
  * degeneratesites.py is python2
+ * lines 71-79 of analysis/dng/filter/Makefile references scripts to make some figures. are these necessary? do we have the scripts?
 
 Complete File Structure after everything is made
 ------------------------------------------------
  * :open_file_folder: data/
- 	* :open_file_folder: e_grandis/ - resources from the e grandis genome
+ 	* :open_file_folder: e_grandis/ - resources from the *E. grandis* genome
  		* ref.fa - *E. grandis* reference
+ 		* egrandis_201_repeatmask.gff3 - *E. grandis* repeat mask
+ 		* egrandis_201_genes.gff3 - *E. grandis* gene annotations
  	* :open_file_folder: raw/ - the raw reads
  	* :open_file_folder: mutated/ - reads with simulated mutations to determine the false negative rate
  * :open_file_folder: analysis/
@@ -119,8 +122,27 @@ Complete File Structure after everything is made
  		* e_mel_3_degenerate.sites
  		* e_mel_3_degenerate.bed
  	* alignment_norepeats.ad - DeNovoGear pileup of sites at e_mel_3_norepeats.regions
- 	* *TODO*
  	* :open_file_folder: dng
+ 		* :open_file_folder: gatk/ - initial call set to improve
+ 			* *scaffold_#*.haplotypecaller.vcf.gz - initial calls for the specified scaffold
+ 		* :open_file_folder: call/ - DeNovoGear calls
+ 			* *scaffold_#*.call.vcf.gz - calls from DeNovoGear
+ 		* allgatk.vcf.gz - concatenated GATK initial calls
+ 		* allcalls.vcf.gz - concatenated DeNovoGear calls
+ 		* denovos.vcf.gz - only denovo mutations from the DeNovoGear calls
+ 		* :open_file_folder: filter/ - further filters on the DeNovoGear callset
+ 			* genome.txt - genome description for BEDTools
+ 			* deduped.bed - variant sites that do not have another variant within 1000 nucleotides
+ 			* deduped.vcf.gz - vcf of variant sites that don't have another variant within 1000 nucleotides
+ 			* deduped.slop.bed - 500 bases on each side of each variant in deduped.bed
+ 			* bam/deduped_regions.bam - BAM of reads that mapped in deduped.slop.bed
+ 			* hplen.tsv.gz - tsv containing length of haplotype blocks each variant is in
+ 			* goodsites.vcf - vcf containing denovo sites in haplotype blocks over 500bp long
+ 			* goodsites.slop.bed - 100 bases on each side of the variants in goodsites
+ 			* goodsites.context.txt - list of base before, ref base, and base after each variant in goodsites
+ 		* *TODO*
+ 		* :open_file_folder: optim/
+ 		* :open_file_folder: phasing/
  	* :open_file_folder: false_negative_rate
  	* :open_file_folder: false_positive_rate
  	* :open_file_folder: gatk4

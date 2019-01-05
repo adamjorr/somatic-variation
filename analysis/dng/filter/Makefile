@@ -10,6 +10,7 @@ DENOVOS=../denovos.vcf.gz
 BCFTOOLS=bcftools
 BEDTOOLS=bedtools
 RSCRIPT=Rscript --vanilla
+SCRIPTDIR=../../../scripts/
 
 #####################################################################
 
@@ -45,11 +46,12 @@ deduped.slop.bed: deduped.bed genome.txt
 
 # Extract reads from near denovos
 bam/deduped_regions.bam: $(BAM) deduped.slop.bed
+	mkdir -p bam
 	samtools view -O BAM -o $@ -L deduped.slop.bed $<
 	samtools index $@
 
 hplen.tsv.gz: ../phasing/phased.vcf.gz
-	${RSCRIPT} hplen.R
+	$(RSCRIPT) $(SCRIPTDIR)/hplen.R
 	bgzip $(basename $@)
 	tabix -S 1 -s 1 -b 2 -e 2 $@
 
