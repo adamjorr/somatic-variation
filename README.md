@@ -140,13 +140,58 @@ Complete File Structure after everything is made
  			* goodsites.vcf - vcf containing denovo sites in haplotype blocks over 500bp long
  			* goodsites.slop.bed - 100 bases on each side of the variants in goodsites
  			* goodsites.context.txt - list of base before, ref base, and base after each variant in goodsites
- 		* *TODO*
- 		* :open_file_folder: optim/
- 		* :open_file_folder: phasing/
- 	* :open_file_folder: false_negative_rate
- 	* :open_file_folder: false_positive_rate
- 	* :open_file_folder: gatk4
- 	* :open_file_folder: variant_table
+ 		* :open_file_folder: optim/ - files related to fitting model parameters
+			* *scaffold_#*.bed - degenerate sites on the specified scaffold
+			* *scaffold_#*.bcftools.vcf.gz - bcftools called on the degenerate sites
+			* loglike.jobs - file containing commands to run to obtain the log likelihood of the model
+			* optimized_params.txt - file describing maximum likelihood parameters
+ 		* :open_file_folder: phasing/ - files related to phasing variants
+			* :open_file_folder: input/ - input files for phasing
+				* *scaffold_#*.vcf.gz - input variants to phase
+			* :open_file_folder: phased/ - output phased files
+				* *scaffold_#*.vcf.gz - whatshap phased variants
+			* phased.vcf.gz - combined phased variants
+ 	* :open_file_folder: false_negative_rate/ - files for finding the false negative rate. This Makefile makes the mutated reads.
+	 	* sites_to_mutate.bed - random sites to mutate
+		* sites_to_mutate.vcf.gz - random sites genotyped using parameters estimated from bcftools calls and a star tree
+		* sites_to_mutate.txt - genotyped random sites in a tsv format suitable for the mutation simulation script
+		* :open_file_folder: mut_files/ - lists of mutations to create in each sample
+			* mutations.tab - locations of mutations
+			* mutfile.txt - master list of mutations
+			* mut_M#.txt - sample-specific mutations
+		* :open_file_folder: sed_scripts/*M##*/ - sed scripts for mutating the sample
+			* mut_M*#*.txt.R1.sed - sed script for mutating the R1 reads
+			* mut_M*#*.txt.R2.sed - sed script for mutating the R2 reads
+		* alignment.bam - alignment of mutated reads to e_mel_3 reference
+		* alignment.dedup.bam - alignment deduped with picard
+		* alignment.firstcalls.vcf - first calls used to do BQSR
+		* alignment.recal.table - recalibration table used to do BQSR
+		* alignment.recal.bam - alignment after deduplication and BQSR
+		* :open_file_folder: dng/ - finding the false negative rate for the denovogear pipeline
+			* denovos.vcf.gz - denovo mutations called from the mutated sites
+			* inrepeats.txt - mutation locations that are in the repeatmask
+			* results.txt - tab delimited file showing each simulated mutation and whether or not it was detected
+			* :open_file_folder: filter/ - same as the files in analysis/dng/filter but created from the alignment containing the mutated reads
+			* :open_file_folderL phasing/ - same as the files in analysis/dng/phasing but created from the alignment containing the mutated reads
+ 	* :open_file_folder: false_positive_rate/ - files for estimating the false positive rate of the pipeline
+	 	* :open_file_folder: trees/ - randomly generated trees to use to call variants
+		* :open_file_folder: filter/ - removing clustered variants for each callset
+		* :open_file_folder: goodsites/ - further filtering based on haplotype block length
+		* :open_file_folder: denovos/ - denovos called for each randomly generated tree
+		* allgatk.vcf.gz - variants previously called with GATK
+		* num_false_pos.txt - number of variants called in each final call set
+		* allgoodsites.bed - BED file containing every called site in all simulations
+		* num_false_pos_no_originalcalls.txt - num_false_pos.txt but excluding any site that was called as variable using the true tree
+		* originalcalls_overlaps.vcf.gz - original calls that overlap a site detected in any of the simulated calls
+ 	* :open_file_folder: gatk4/ - calling variants with GATK to determine whether the true tree topology is useful
+		* var-calls.vcf - gatk HaplotypeCaller calls
+		* depth-and-het-filter.vcf - var-calls.vcf filtered to remove sites with too high DP and ExcessHet
+		* repeat-filter.vcf - depth-and-het-filter.vcf filtered to remove repeatmasked regions
+		* replicate-filter-only-variable.vcf - repeat-filter.vcf filtered to remove sites where any of the replicates of a sample disagree
+		* replicate-filter-only-variable.fa - a FASTA alignment of the concatenated variable sites
+		* replicate-filter-only-variable.nwk - a maximum likelihood tree of the FASTA alignment
+	* *TODO*
+ 	* :open_file_folder: variant_table/
  * :open_file_folder: results/
  * :open_file_folder: scripts/
  * :open_file_folder: 

@@ -10,7 +10,7 @@ VCFTOFA=$(SCRIPTDIR)/vcf2fa.sh
 %.vcf.gz.csi: %.vcf.gz
 	bcftools index $<
 
-var-calls.vcf: ../alignment.dedup.bam e_mel_3/e_mel_3.fa e_mel_3/e_mel_3.dict
+var-calls.vcf: ../alignment.recal.bam e_mel_3/e_mel_3.fa e_mel_3/e_mel_3.dict
 	mkdir -p calls; parallel --halt 2 gatk HaplotypeCaller --heterozygosity 0.025 -R $(word 2, $^) -I $< -ploidy 2 -L scaffold_{} -O calls/{}_$@ ::: $(shell seq 1 11); picard SortVcf $(foreach num, $(shell seq 1 11), I=calls/$(num)_$@) O=$@ SEQUENCE_DICTIONARY=$(word 3, $^)
 
 depth-and-het-filter.vcf: var-calls.vcf

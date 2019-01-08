@@ -48,17 +48,17 @@ sites_to_mutate.txt: sites_to_mutate.vcf.gz
 mut_files/:
 	mkdir -p $@
 
-mut_files/mutations.tab: sites_to_mutate.txt mut_files
+mut_files/mutations.tab: sites_to_mutate.txt | mut_files/
 	cat $< | cut -f 1,2 > $@ 
 
-mut_files/mutations.tab.gz: ../mut_files/mutations.tab mut_files
+mut_files/mutations.tab.gz: ../mut_files/mutations.tab | mut_files/
 	bgzip -c <$< >$@
 
-mut_files/mutations.tab.gz.tbi: ../mut_files/mutations.tab.gz mut_files
+mut_files/mutations.tab.gz.tbi: ../mut_files/mutations.tab.gz | mut_files/
 	tabix -b2 -e2 $<
 
-mut_files/mutfile.txt: sites_to_mutate.txt mut_files/
-	cd $(word 2, $^) && cat ../$< | $(SETUPMUTATIONS) && cd ..
+mut_files/mutfile.txt: sites_to_mutate.txt | mut_files/
+	cd $| && cat ../$< | $(SETUPMUTATIONS) && cd ..
 
 $(MUTFILES): mut_files/mutfile.txt | mut_files/
 	$(SPLITBYTREE) -i $< -o $| -n 1000
@@ -88,16 +88,15 @@ $(MUTATEDREADSDIR):
 
 RAWREADS=$(wildcard $(RAWREADSDIR)/*/*.fastq)
 
-#TODO
 #stem is like $(MUTATEDREADSDIR)/Sample_M1a_index2/M1a_index2_CGATGTAT_L003_R1_001.fastq
 #R1 or R2 is $(findstring R1 $*)$(findstring R2 %*)
 #sample: $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample),$*))
 #sample with replicate: $(foreach replicate, a b c, $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample)$(replicate), $*)))
 MYSAMPLE=$(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample),$*))
 MYSAMPLEREP=$(foreach replicate, a b c, $(foreach sample, $(addprefix M, $(SAMPLENUMBERS)), $(findstring $(sample)$(replicate), $*)))
-FWDREV=$(findstring R1 $*)$(findstring R2 %*)
+FWDREV=$(findstring R1 $*)$(findstring R2 $*)
 $(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS)) : % : $(subst $(MUTATEDREADSDIR), $(RAWREADSDIR), $*)\
-	sed_scripts/$(MYSAMPLEREP)/mut_$(MYSAMPLE).txt.$(FWDREV).sed
+	sed_scripts/$(MYSAMPLEREP)/mut_$(MYSAMPLE).txt.$(FWDREV).sed | $(MUTATEDREADSDIR)
 		sed -f $(word 2, $^) $< > $@
 
 mutatedreads: $(MUTATEDREADSDIR) $(subst $(RAWREADSDIR), $(MUTATEDREADSDIR), $(RAWREADS))

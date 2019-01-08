@@ -45,7 +45,7 @@ call: $(addprefix denovos/,$(addsuffix .denovos.vcf.gz, $(JOBNUMS)))
 
 GOODSITES=$(addprefix goodsites/,$(addsuffix .goodsites.vcf.gz, $(JOBNUMS)))
 
-denovos/%.denovos.vcf.gz denovos/%.denovos.vcf.gz.csi: trees/%.ped denovos/ allgatk.vcf.gz
+denovos/%.denovos.vcf.gz denovos/%.denovos.vcf.gz.csi: trees/%.ped allgatk.vcf.gz | denovos/
 	$(DNGCALL) --input=allgatk.vcf.gz --output=$@ \
 		--ped=$< \
 		--min-qual=3 \
@@ -78,13 +78,13 @@ denovos/:
 trees/:
 	mkdir -p $@
 
-trees/%.ped: trees/
+trees/%.ped: | trees/
 	echo "##PEDNG v1.0" > $@; echo -e "M\t.\t.\t0" | paste - <( $(SHUF_LABELS) ) >> $@
 
 filter/:
 	mkdir -p $@
 
-filter/%.deduped.bed: denovos/%.denovos.vcf.gz filter/
+filter/%.deduped.bed: denovos/%.denovos.vcf.gz | filter/
 	bedtools merge -c 1 -o count -d 1000 -i $< | awk '$$4==1' > $@
 
 filter/%.deduped.vcf.gz: denovos/%.denovos.vcf.gz filter/%.deduped.bed
@@ -93,7 +93,7 @@ filter/%.deduped.vcf.gz: denovos/%.denovos.vcf.gz filter/%.deduped.bed
 goodsites/:
 	mkdir -p $@
 
-goodsites/%.goodsites.vcf.gz: filter/%.deduped.vcf.gz filter/%.deduped.vcf.gz.csi $(DNGDIR)/filter/hplen.tsv.gz goodsites/
+goodsites/%.goodsites.vcf.gz: filter/%.deduped.vcf.gz filter/%.deduped.vcf.gz.csi $(DNGDIR)/filter/hplen.tsv.gz | goodsites/
 	bcftools annotate -a $(word 3, $^) -h $(DNGDIR)/filter/hplen_header.txt -c CHROM,POS,HPLEN $< | \
 	bcftools view -o $@ -O z -i 'LLS >= -5 & DNP >= 0.99999 & HPLEN >= 500'
 
