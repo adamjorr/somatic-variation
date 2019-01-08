@@ -193,18 +193,39 @@ Complete File Structure after everything is made
  	* :open_file_folder: variant_table/ - table containing some extra data about each variant call
 		* var_calls.tsv - table containing extra data about each variant call
 		* chromosome_plot.pdf - plot of the first 11 chromosomes with variant locations indicated
- * *TODO*
  * :open_file_folder: results/
 	* dng_callability.txt - analysis of simulated mutations to determine false negative rate
 	* dng_variants.tsv - analysis of variants detected by the pipeline
-	* filtered_bed_excluded.fa - 
-	* genomecov.txt - 
-	* MC_variants.bed - 
-	* MC_closest_features.bed - 
-	* MC_closest_genes.txt - 
-	* MC_genes_phytozome_descriptions.tsv - 
+	* filtered_bed_excluded.fa - FASTA alignment of concatenated variable sites determined by GATK
+	* genomecov.txt - stats for calculating fraction of genome covered by a gene
+	* MC_variants.bed - position of variants on the resistant branch
+	* MC_closest_features.bed - gene annotations closest to the positions mutated on the resistant branch
+	* MC_closest_genes.txt - genes in MC_closest_features.bed, only a subset of columns
+	* MC_genes_phytozome_descriptions.tsv - phytozome descriptions for genes in MC_closest_genes.txt
  * :open_file_folder: scripts/
- * :open_file_folder: 
+	* cigarpos.pl - helper script for induce_mutations.sh
+	* clean_reads.sh - correct reads and remove reads with high-abundance kmers
+	* create_consensus.sh - take a read alignment and a reference and produce a fasta consensus sequence
+	* diploidify.py - take a multiple sequence alignment with IUPAC ambiguity codes representing heterozygous genotypes, do some checks, and turn it into one where each site represents one base
+	* fig-em-compare.R - plots the true tree back to back with the inferred tree
+	* fig-em-hist.R - plots the context histogram
+	* filt_with_replicates.pl - filter a vcf using sample replication
+	* gatkcaller.sh - an implementation of the GATK best practices workflow
+	* induce_mutations.sh - generate sed scripts to modify reads from a simulated mutation
+	* label_permutation.R - generate a random tree with maximal RF distance from the input tree
+	* ngm_aligner.sh - align reads to a reference using NGM
+	* optimize_parameters.R - find maximum likelihood DeNovoGear parameters
+	* phytozome_query.py - query phytozome for gene descriptions
+	* plot_chromosomes.R - plot the locations of variants on chromosomes
+	* plot_tree.R - plot a newick tree
+	* setup_mutations.sh - take a file of positions and genotypes and generate mutations with a TS:TV ratio of 2:1
+	* slice-paired-reads-by-coverage.py - filter paired reads by a given kmer abundance cutoff
+	* spiked_mutation_results.py - generates a table determining whether a mutation was detected given simulated mutations and variant calls
+	* split_mutations_by_tree.sh - splits a table of proposed mutations to each sample such that a constant number of mutations are generated on each branch
+	* variant_analysis.R - summarize data on the variants detected by the pipeline
+	* vcf2fa.sh - helper script that takes a vcf and converts it to a diploidified FASTA alignment
+	* vcf2tree.sh - helper script that takes a vcf and converts it to a newick tree view vcf2fa and RAxML
+	* vcf_tab_to_fasta_alignment.pl - helper script to convert a vcf to a fasta alignment
 
 Extras:
   * :open_file_folder: deprecated/
