@@ -190,9 +190,19 @@ Complete File Structure after everything is made
 		* replicate-filter-only-variable.vcf - repeat-filter.vcf filtered to remove sites where any of the replicates of a sample disagree
 		* replicate-filter-only-variable.fa - a FASTA alignment of the concatenated variable sites
 		* replicate-filter-only-variable.nwk - a maximum likelihood tree of the FASTA alignment
-	* *TODO*
- 	* :open_file_folder: variant_table/
+ 	* :open_file_folder: variant_table/ - table containing some extra data about each variant call
+		* var_calls.tsv - table containing extra data about each variant call
+		* chromosome_plot.pdf - plot of the first 11 chromosomes with variant locations indicated
+ * *TODO*
  * :open_file_folder: results/
+	* dng_callability.txt - analysis of simulated mutations to determine false negative rate
+	* dng_variants.tsv - analysis of variants detected by the pipeline
+	* filtered_bed_excluded.fa - 
+	* genomecov.txt - 
+	* MC_variants.bed - 
+	* MC_closest_features.bed - 
+	* MC_closest_genes.txt - 
+	* MC_genes_phytozome_descriptions.tsv - 
  * :open_file_folder: scripts/
  * :open_file_folder: 
 
