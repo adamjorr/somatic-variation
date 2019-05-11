@@ -7,7 +7,7 @@ USAGE="Usage: $0 [-t THREADS] [-p PICARD_CMD] [-d TMPDIR] [-g  GATK_PATH] [-b BE
 
 #Here are some things you might want to change:
 PICARD="picard" #How do I call picard on this system?
-GATK=gatk #Location of your GATK jar
+GATK=gatk #How do I call gatk on this system?
 CORES=48
 TMPOPTION=""
 OUTFILE=/dev/stdout
@@ -15,6 +15,7 @@ NUMNS=30
 BEDFILE=""
 REFERENCEFILE=""
 FILEIN=""
+HET="0.025"
 trap "exit 1" ERR
 
 while getopts :t:p:g:d:b:o:r:i:h opt; do
@@ -78,34 +79,34 @@ if [ "FILEIN" == "" ]; then
 	exit 1
 fi
 
+if [ "$TMPOPTION" != "" ]; then
+	mkdir -p $TMPOPTION
+fi
 
-#TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
-TMPDIR=./tmp/gatkcaller_tmp_QWSlQ4/
-# trap "rm -rf $TMPDIR" EXIT INT TERM HUP
+TMPDIR=$(mktemp -d --tmpdir=$TMPOPTION gatkcaller_tmp_XXXXXX)
+trap "rm -rf $TMPDIR" EXIT INT TERM HUP
 
 if [ "$BEDFILE" != "" ]; then
 	BEDFILE=$(echo -XL $BEDFILE)
 fi
 
 
-###Below uses GATK to do some analysis.
+##use GATK to do some analysis.
 DEDUPLIFIEDBAM=${FILEIN}
 REFERENCEDICT=${REFERENCEFILE%.*}.dict
-#FULLINTERVALS=$(mktemp --tmpdir=$TMPDIR --suffix=.interval_list fullIntervals_XXX)
-SCATTEREDINTERVALDIR=${TMPDIR}/scatteredIntervals_zkmc5a
-SCATTEREDFIRSTCALLDIR=${TMPDIR}/scattered_first_calls_Qvk
+SCATTEREDINTERVALDIR=$(mktemp --tmpdir=$TMPDIR scatteredIntervals_XXXXXX)
+SCATTEREDFIRSTCALLDIR=$(mktemp --tmpdir=$TMPDIR scattered_first_calls_XXXXXX)
 SUFFIXES=$(seq -f %02.0f 0 $((CORES-1)))
-#SCATTEREDFIRSTCALLS=$(find $SCATTEREDFIRSTCALLDIR -name 'first_calls_*')
 SCATTEREDFIRSTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDFIRSTCALLDIR --suffix=.vcf.gz first_calls_{}_XXXXXX)
 CMDFIRSTCALLS=$(echo $SCATTEREDFIRSTCALLS | tr ' ' '\n' | xargs -i echo I={})
-JOINEDFIRSTCALLS=$TMPDIR/joined_first_calls_Fbl.vcf
-SORTEDFIRSTCALLS=$TMPDIR/sorted_first_calls_RuA.vcf
-RECALIBRATEDBAM=$TMPDIR/recal_Hrg.bam
-SCATTEREDOUTCALLDIR=$TMPDIR/scattered_output_calls_5Zv
-SCATTEREDOUTCALLS=$(find $SCATTEREDOUTCALLDIR -name 'out_call_*')
+
+JOINEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf joined_first_calls_XXXXXX)
+SORTEDFIRSTCALLS=$(mktemp --tmpdir=$TMPDIR --suffix=.vcf sorted_first_calls_XXXXXX)
+RECALIBRATEDBAM=$(mktemp --tmpdir=$TMPDIR --suffix=.bam recal_XXXXXX)
+SCATTEREDOUTCALLDIR=$(mktemp --tmpdir=$TMPDIR scattered_output_calls_XXXXXX)
+SCATTEREDOUTCALLS=$(echo $SUFFIXES | tr ' ' '\n' | xargs -n 1 -i mktemp --tmpdir=$SCATTEREDOUTCALLDIR --suffix=.vcf out_call_{}_XXXXXX)
 CMDOUTCALLS=$(echo $SCATTEREDOUTCALLS | tr ' ' '\n' | xargs -i echo I={})
-OUTCALLS=$TMPDIR/out_calls_6ch.vcf
-RECALDATATABLE=$TMPDIR/recal_data_fzJ.table
+RECALDATATABLE=$(mktemp --tmpdir=$TMPDIR --suffix=.table recal_data_XXXXXX)
 
 if [ ! -e ${REFERENCEFILE}.fai ]; then
 	samtools faidx $REFERENCEFILE
@@ -115,23 +116,18 @@ if [ ! -e ${REFERENCEDICT} ]; then
 	$PICARD CreateSequenceDictionary REFERENCE=${REFERENCEFILE} OUTPUT=${REFERENCEDICT}
 fi
 
-#$PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
+if [ ! -e ${DEDUPLIFIEDBAM%.bam}.bai ]; then
+	$PICARD BuildBamIndex INPUT=${DEDUPLIFIEDBAM}
+fi
 
 #GATK TO RECALIBRATE QUAL SCORES + CALL VARIANTS
-#$PICARD ScatterIntervalsByNs R=${REFERENCEFILE} OT=ACGT MAX_TO_MERGE=${NUMNS} O=${FULLINTERVALS}
-#$PICARD IntervalListTools I=${FULLINTERVALS} SCATTER_COUNT=$CORES O=${SCATTEREDINTERVALDIR}
-#gatk SplitIntervals -R ${REFERENCEFILE} --scatter-count $CORES -L scaffold_1 -L scaffold_2 -L scaffold_3 -L scaffold_4 -L scaffold_5 -L scaffold_6 -L scaffold_7 -L scaffold_8 -L scaffold_9 -L scaffold_10 -L scaffold_11 -O ${SCATTEREDINTERVALDIR}
+gatk SplitIntervals -R ${REFERENCEFILE} --scatter-count $CORES -L scaffold_1 -L scaffold_2 -L scaffold_3 -L scaffold_4 -L scaffold_5 -L scaffold_6 -L scaffold_7 -L scaffold_8 -L scaffold_9 -L scaffold_10 -L scaffold_11 -O ${SCATTEREDINTERVALDIR}
 SCATTEREDINTERVALS=$(find ${SCATTEREDINTERVALDIR} -name '*.intervals')
-#the last one failed but let's continue on anyway. output = scattered 31, intervals = interval48
-#parallel --halt 2 ${GATK} HaplotypeCaller --heterozygosity 0.025 -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM ${BEDFILE} -stand-call-conf 50 -ploidy 2 -L {1} -O {2} ::: ${SCATTEREDINTERVALS} :::+ ${SCATTEREDFIRSTCALLS}
-#$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
-#rm $SCATTEREDFIRSTCALLS ${SORTEDFIRSTCALLS}.idx
-#${GATK} BaseRecalibrator -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --known-sites $SORTEDFIRSTCALLS -O $RECALDATATABLE
-#rm $SORTEDFIRSTCALLS
+parallel --halt 2 ${GATK} HaplotypeCaller --heterozygosity ${HET} -R ${REFERENCEFILE} -I $DEDUPLIFIEDBAM ${BEDFILE} -stand-call-conf 50 -ploidy 2 -L {1} -O {2} ::: ${SCATTEREDINTERVALS} :::+ ${SCATTEREDFIRSTCALLS}
+$PICARD SortVcf ${CMDFIRSTCALLS} O=${SORTEDFIRSTCALLS} SEQUENCE_DICTIONARY=${REFERENCEDICT}
+${GATK} BaseRecalibrator -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} ${BEDFILE} --known-sites $SORTEDFIRSTCALLS -O $RECALDATATABLE
 ${GATK} ApplyBQSR -I $DEDUPLIFIEDBAM -R ${REFERENCEFILE} --bqsr-recal-file $RECALDATATABLE -O $RECALIBRATEDBAM
-#rm $RECALDATATABLE
-parallel --halt 2 ${GATK} HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM ${BEDFILE} --heterozygosity 0.025 -ploidy 2 -L {1} -O {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
-#rm $SCATTEREDINTERVALS $RECALIBRATEDBAM
+parallel --halt 2 ${GATK} HaplotypeCaller -R ${REFERENCEFILE} -I $RECALIBRATEDBAM ${BEDFILE} --heterozygosity ${HET} -ploidy 2 -L {1} -O {2} ::: $SCATTEREDINTERVALS :::+ $SCATTEREDOUTCALLS
 $PICARD SortVcf ${CMDOUTCALLS} O=${OUTFILE} SEQUENCE_DICTIONARY=${REFERENCEDICT}
 
 exit 0
