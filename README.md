@@ -50,8 +50,8 @@ To fully replicate our experiment, you will also need:
  9. liftOver
  10. VCFtools
 
-Notes For Installing Stuff with Conda
---------------------------------------
+Notes For Installing with Conda
+-------------------------------
 ```bash
 conda install -n somatic-variation -c bioconda/label/gcc7 khmer rcorrector nextgenmap samtools bcftools gatk4 raxml bedtools ucsc-liftover vcftools perl-vcftools-vcf parallel whatshap perl-bio-cigar picard pyvcf biopython r-ape r-phytools r-tidyverse r-rcolorbrewer r-vcfr r-phangorn r-doparallel r-dfoptim intermine bioconductor-karyoploter bioconductor-variantannotation bioconductor-iranges bioconductor-genomicranges bioconductor-genomicfeatures bioconductor-rtracklayer pysam pybedtools 
 ```
@@ -80,7 +80,7 @@ Doing the Analysis with the provided Makefiles
 The recommended way to run the analysis is with the makefiles provided in the
 :open_file_folder: analysis/ and :open_file_folder: data/ directories. We provide
 some helper scripts in the :open_file_folder: script/ directory that are sometimes
-called by the make files.
+called by the Makefiles.
 
 
 Complete File Structure after everything is made
@@ -400,7 +400,7 @@ We recommend following this with a depth and heterozygosity filter and removing 
 bcftools filter -g 50 -i 'DP <= 500 && ExcessHet <=40' repfiltered.vcf | bcftools view -m2 -M2 -v snps -o filtered.vcf
 ```
 
-Repat Filters
+Repeat Filters
 -------------
 We find the quality of our variants increases when filtering out variants in repetitive regions.
 To do so, we liftOver repetitive region annotations to our individualized reference and filter with bcftools.
@@ -447,11 +447,59 @@ Rscript plot_tree.R tree.nwk out.pdf
 
 Mutation Calling Given A .ped File with DeNovoGear
 --------------------------------------------------
-TODO
+[DeNovoGear](https://github.com/denovogear/denovogear) is a suite of tools for detecting *de novo* mutations.
+We can use it to find *de novo* mutations in our samples by encoding the sample structure as a pedigree
+in a `.ped` file. In our case, the file looks like this:
+
+```
+##PEDNG v1.0
+M       .       .       0       (((((M1a:0,M1b:0,M1c:0)M1:698,(M2a:0,M2b:0,M2c:0)M2:638)MD:75,(M3a:0,M3b:0,M3c:0)M3:796)MC:773,(M4a:0,M4b:0,M4c:0)M4:844)MB:372,((((M7a:0,M7b:0,M7c:0)M7:978,(M6a:0,M6b:0,M6c:0)M6:928)MG:111,(M8a:0,M8b:0,M8c:0)M8:1029)MF:112,(M5a:0,M5b:0,M5c:0)M5:1297)ME:358)MA:0;
+```
+
+To summarize, each line represents an individual. The 1st column is the individual ID, the 2nd and 3rd column represent the individual's father and mother.
+The fourth column represents the individual's sex, where 0 indicates autosomal. The last column is a Newick tree listing each sample and a scaling factor
+based on the physical distance between the samples. For more information on the PEDNG format, see [here](https://github.com/denovogear/denovogear#pedigree-file-format).
+
+DeNovoGear can call variants from an alignment or pileup. It can also re-call sites provided in a VCF file.
+We use DeNovoGear to call variants from HaplotypeCaller output with the `--standard-min-confidence-threshold-for-calling=0` parameter
+set to benefit form HaplotypeCaller's haplotype reconstruction and DeNovoGear's variant calling model.
+
+An example call using DeNovoGear this way is:
+
+```bash
+dng call --input=gatk.vcf --output=dng.vcf --ped=sampleM.ped --mu-somatic=1e-7 --theta=0.025
+```
+
+These calls can then be filtered using your favorite filtering method.
 
 Estimating False Positive and False Negative Rates
 --------------------------------------------------
-TODO
+False positive rates are difficult to estimate, but we can get a crude estimate by randomizing the assumed phylogeny,
+rerunning the pipeline, and counting the number of new sites that are called. This estimates the false positive rate
+by estimating how many noisy sites appear to be true variants by adding the tree to the model. Our pipeline produced
+a mean of 0, but your mileage may vary.
+
+We provide an R script `label_permutation.R` which shuffles the tree labels such that the new tree is maximally distant
+from the given tree. The script takes no arguments but should be easily modifiable for use with other tree-like samples.
+The following command will produce a pedigree file like the one above but with suffled labels, call DeNovoGear once more,
+and remove the sites that were called with the original tree:
+
+```bash
+echo "##PEDNG v1.0" > shuffled.ped && echo -e "M\t.\t.\t0" | paste - <( label_permutation.R ) >> shuffled.ped #create a shuffled pedigree file
+dng call --input=gatk.vcf --output=shuffled.vcf --ped=shuffled.ped --mu-somatic=1e-7 --theta=0.025 #call with shuffled tree
+# ...
+#apply filters here
+# ...
+bcftools view -T ^shuffled.vcf -Oz -o shuffled_no_original_calls.vcf.gz
+```
+
+The last step can be omitted, but you run the risk of including truly variable sites in your assessment.
+Whether to include them or not depends on whether you would rather risk your rate being inflated or deflated.
+
+The method we use to estimate false negative rates is to simulate mutations, re-run our pipeline, and
+calculate the proportion of inserted mutations we ultimately recover.
+
+TODO: talk about estimating FNR
 
 Experimental Replication
 ========================
