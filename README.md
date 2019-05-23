@@ -472,6 +472,13 @@ dng call --input=gatk.vcf --output=dng.vcf --ped=sampleM.ped --mu-somatic=1e-7 -
 
 These calls can then be filtered using your favorite filtering method.
 
+Estimating Model Parameters for DeNovoGear
+------------------------------------------
+We used bcftools pileup on 3-fold degenerate sites and used the likelihood command to estimate parameters for use with DeNovoGear.
+
+TODO: talk about parameter estimation
+
+
 Estimating False Positive and False Negative Rates
 --------------------------------------------------
 False positive rates are difficult to estimate, but we can get a crude estimate by randomizing the assumed phylogeny,
@@ -499,7 +506,19 @@ Whether to include them or not depends on whether you would rather risk your rat
 The method we use to estimate false negative rates is to simulate mutations, re-run our pipeline, and
 calculate the proportion of inserted mutations we ultimately recover.
 
-TODO: talk about estimating FNR
+First, random sites are chosen with BEDTools, and these sites are genotyped with bcftools and DeNovoGear using a star tree.
+This VCF is then turned into a text file containing the genotype of the root.
+
+```bash
+bedtools random -l 1 -n 14000 -seed 999 -g ref.fa.fai | bedtools sort -faidx ref.fa.fai > sites_to_mutate.bed
+bcftools mpileup -a 'AD,DP' -T sites_to_mutate.bed -q3 -Q13 -Ou -f ref.fa | bcftools call -m -A -p 0 -P 0.025 -O z -o bcftools.vcf.gz
+dng call --input=bcftools.vcf.gz --output=sites_to_mutate.vcf.gz --ped=sampleM_star.ped --mu-somatic=1e-7 --theta=0.025
+bcftools query -s GL/M -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\n' sites_to_mutate.vcf.gz | tr '/' '\t' > sites_to_mutate.txt
+```
+
+The sites and current genotypes are then split out to place an equal number of mutations on each branch.
+
+TODO: talk about estimating FNR (https://github.com/adamjorr/somatic-variation/blob/ce53228cffbf4a24ac6a0531a16817dc5dd24d68/analysis/false_negative_rate/Makefile#L45)
 
 Experimental Replication
 ========================
