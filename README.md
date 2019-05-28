@@ -476,11 +476,25 @@ Estimating Model Parameters for DeNovoGear
 ------------------------------------------
 We used bcftools pileup on 3-fold degenerate sites and used the likelihood command to estimate parameters for use with DeNovoGear.
 
-TODO: talk about parameter estimation
+To create a BED file containing degenerate sites given a BED file containing coding sequences,
+we use the `degenerate.py` script:
+```bash
+python2 degenerate.py -i cds.bed -r ref.fa -o degenerate.bed
+```
 
+This script lives in the `deprecated` folder since it's a python2 script, but it should work if called properly.
 
-Estimating False Positive and False Negative Rates
---------------------------------------------------
+Once you've obtained a BED file containing degenerate sites, you can use the `optimize_parameters.R` script to run DeNovoGear's `loglike` command
+to search parameter space for the parameters that maximize the log likelihood. The command takes many input types, but the easiest will be to
+call the degenerate sites with BCFtools, ensure the AD and Depth fields are included in the resultant VCF, and use that file as input.
+
+```bash
+bcftools mpileup -d 10000 -a 'AD,DP' -T degenerate.bed -q 3 -Q 13 -O u -f ref.fa alignment.bam | bcftools call -m -A -p 0 -P 0.025 -O z -o degenerate.vcf.gz
+Rscript --vanilla optimize_parameters.R degenerate.vcf.gz > optimized_params.txt
+```
+
+Estimating False Positive Rate
+------------------------------
 False positive rates are difficult to estimate, but we can get a crude estimate by randomizing the assumed phylogeny,
 rerunning the pipeline, and counting the number of new sites that are called. This estimates the false positive rate
 by estimating how many noisy sites appear to be true variants by adding the tree to the model. Our pipeline produced
@@ -503,6 +517,9 @@ bcftools view -T ^shuffled.vcf -Oz -o shuffled_no_original_calls.vcf.gz
 The last step can be omitted, but you run the risk of including truly variable sites in your assessment.
 Whether to include them or not depends on whether you would rather risk your rate being inflated or deflated.
 
+Estimating False Negative Rate
+------------------------------
+
 The method we use to estimate false negative rates is to simulate mutations, re-run our pipeline, and
 calculate the proportion of inserted mutations we ultimately recover.
 
@@ -516,9 +533,32 @@ dng call --input=bcftools.vcf.gz --output=sites_to_mutate.vcf.gz --ped=sampleM_s
 bcftools query -s GL/M -f '%CHROM\t%POS\t%REF\t%FIRST_ALT\t[%TGT]\n' sites_to_mutate.vcf.gz | tr '/' '\t' > sites_to_mutate.txt
 ```
 
-The sites and current genotypes are then split out to place an equal number of mutations on each branch.
+The sites and current genotypes are then distributed to place an equal number of mutations on each branch.
 
-TODO: talk about estimating FNR (https://github.com/adamjorr/somatic-variation/blob/ce53228cffbf4a24ac6a0531a16817dc5dd24d68/analysis/false_negative_rate/Makefile#L45)
+```bash
+mkdir -p mut_files
+cat sites_to_mutate.txt | cut -f 1,2 > mut_files/mutations.tab
+bgzip -c <mut_files/mutations.tab >mut_files/mutations.tab.gz
+tabix -b2 -e2 mut_files/mutations.tab.gz
+cd mut_files && cat ../sites_to_mutate.txt | setup_mutations.sh && cd ..
+split_mutations_by_tree.sh -i mut_files/mutfile.txt -o mut_files -n 1000
+```
+
+These mutation files are then used to create `sed` scripts that will introduce the mutations into the proper read. For each sample, create and run a sed script:
+
+```bash
+induce_mutations.sh -b alignment.bam -f fwd_reads_sample1.fq -r rev_reads_sample1.fq -m mut_files/sample1.txt -g ref.fa -o sed_scripts/sample1
+sed -f sed_scripts/sample1/mut_sample1.txt.R1.sed fwd_reads_sample1.fq > fwd_reads_sample1.mutated.fq
+#repeat for R2 reads
+```
+
+These mutated reads can then be run through the pipeline. The resulting VCF can be searched for the induced mutations,
+as with the example `spiked_mutation_results.py` script, which also emits other useful information.
+This script requires a list of mutated sites that occurred in repetitive regions.
+```bash
+tabix -R repeat_regions.bed mut_files/mutations.tab.gz > inrepeats.txt
+spiked_mutation_results.py -s mutated_alignment.bam -v mutated_calls.vcf -r inrepeats.txt > results.txt
+```
 
 Experimental Replication
 ========================
@@ -533,8 +573,12 @@ cd analysis
 make
 ```
 
-TODO:provide instruction on where you could swap in your reads to execute the same pipeline.
-TODO:provide more examples
+To execute the same pipeline with your own data, you should be able to deposit your FASTQ reads in the `data/raw` folder.
+Each sample should be in its own folder under that directory. Some of the scripts and Makefiles provided make assumptions about how
+read files and samples are named, so care should be taken that the scripts are able to identify samples, replicates, and 1st pair or 2nd pair
+if paired end reads are provided.
+
+TODO:degenerate.py outputs BED directly now (so update analysis/Makefile line 106)
 
 Script Documentation
 ====================

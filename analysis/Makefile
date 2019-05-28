@@ -103,11 +103,8 @@ liftover/e_mel_3_genes.bed: liftover/e_mel_3_genes.gff3
 e_mel_3_cds.bed: liftover/e_mel_3_genes.gff3
 	cat $< | awk '$$3 == "CDS" {print}' | gff2bed > $@
 
-degenerate/e_mel_3_degenerate.sites: e_mel_3_cds.bed e_mel_3/e_mel_3.fa
+degenerate/e_mel_3_degenerate.bed: e_mel_3_cds.bed e_mel_3/e_mel_3.fa
 	python2 ${DEGENERATESITES} -i $< -r $(word 2, $^) -o $@
-
-degenerate/e_mel_3_degenerate.bed: degenerate/e_mel_3_degenerate.sites
-	cat $< | tr : '\t' > $@
 
 # Reed's Rules
 e_mel_3/e_mel_3.bed: e_mel_3/e_mel_3.fa.fai
