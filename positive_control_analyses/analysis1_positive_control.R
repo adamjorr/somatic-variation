@@ -2,14 +2,14 @@ library(phangorn)
 library(phytools)
 library(ggplot2)
 
-outdir = "~/Documents/github/somatic-variation/variant_analyses/analysis1_positive_control/"
+outdir = "~/Documents/github/somatic-variation/positive_control_analyses/analysis1_positive_control/"
 dir.create(outdir)
 
 # input files
 # these files should exist prior to the anlaysis
-alignment = "~/Documents/github/somatic-variation/variant_analyses/analysis0_alignments/aln_0gaps.fa"
-true.tree = "~/Documents/github/somatic-variation/variant_analyses/tree_em1_physical_structure.phy"
-iqtree = "~/Documents/github/somatic-variation/variant_analyses/iqtree" # mac version by default
+alignment = "~/Documents/github/somatic-variation/positive_control_analyses/analysis0_alignments/aln_0gaps.fa"
+true.tree = "~/Documents/github/somatic-variation/positive_control_analyses/tree_em1_physical_structure.phy"
+iqtree = "~/Documents/github/somatic-variation/positive_control_analyses/iqtree" # mac version by default
 
 
 ################ Analysis 1 #####################

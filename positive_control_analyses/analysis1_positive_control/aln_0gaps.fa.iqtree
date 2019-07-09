@@ -1,8 +1,8 @@
 IQ-TREE 1.5.5 built Jun  2 2017
 
-Input file name: /Users/roblanfear/Documents/github/somatic-variation/variant_analyses/analysis1_positive_control//aln_0gaps.fa
+Input file name: /Users/roblanfear/Documents/github/somatic-variation/positive_control_analyses/analysis1_positive_control//aln_0gaps.fa
 Type of analysis: tree reconstruction + non-parametric bootstrap (1000 replicates)
-Random seed number: 723915
+Random seed number: 229236
 
 REFERENCES
 ----------
@@ -73,18 +73,18 @@ Numbers in parentheses are  standard bootstrap support (%)
 |  +-----M3
 +--| (97)
    |  +------------M4
-   +**| (87)
+   +**| (88)
       |                    +------------------M5
-      |                 +**| (43)
+      |                 +**| (44)
       |                 |  +------------------------------------M8
       +-----------------| (100)
                         |  +---------M6
-                        +--| (65)
+                        +--| (66)
                            +----------M7
 
 Tree in newick format:
 
-(M1:0.0539287681,M2:0.1237603775,(M3:0.0530102198,(M4:0.1132890565,((M5:0.1705515905,M8:0.3208649625)43:0.000002,(M6:0.0882319678,M7:0.1010108394)65:0.031134)100:0.154680)87:0.006339)97:0.031138);
+(M1:0.0539287947,M2:0.1237604138,(M3:0.0530100746,(M4:0.1132886632,((M5:0.1705514734,M8:0.3208649178)44:0.000002,(M6:0.0882322787,M7:0.1010102597)66:0.031134)100:0.154680)88:0.006340)97:0.031137);
 
 CONSENSUS TREE
 --------------
@@ -103,11 +103,11 @@ Numbers in parentheses are bootstrap supports (%)
 |  +**M3
 +**| (97)
    |  +**M4
-   +**| (87)
+   +**| (88)
       |     +**M8
       |  +**| (56)
       |  |  |  +**M7
-      |  |  +**| (65)
+      |  |  +**| (66)
       |  |     +**M6
       +**| (100)
          +**M5
@@ -115,12 +115,12 @@ Numbers in parentheses are bootstrap supports (%)
 
 Consensus tree in newick format: 
 
-(M1:-1.0000000000,M2:-1.0000000000,(M3:-1.0000000000,(M4:-1.0000000000,((M8:-1.0000000000,(M7:-1.0000000000,M6:-1.0000000000)65:-1.0000000000)56:-1.0000000000,M5:-1.0000000000)100:-1.0000000000)87:-1.0000000000)97:-1.0000000000);
+(M1:-1.0000000000,M2:-1.0000000000,(M3:-1.0000000000,(M4:-1.0000000000,((M8:-1.0000000000,(M7:-1.0000000000,M6:-1.0000000000)66:-1.0000000000)56:-1.0000000000,M5:-1.0000000000)100:-1.0000000000)88:-1.0000000000)97:-1.0000000000);
 
 TIME STAMP
 ----------
 
-Date and time: Tue Dec  4 08:38:53 2018
-Total CPU time used: 0.089901 seconds (0h:0m:0s)
-Total wall-clock time used: 0.1205999851 seconds (0h:0m:0s)
+Date and time: Tue Jul  9 10:29:34 2019
+Total CPU time used: 0.094026 seconds (0h:0m:0s)
+Total wall-clock time used: 0.1249170303 seconds (0h:0m:0s)
 
