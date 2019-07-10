@@ -42,8 +42,3 @@ find . -name 'e_mel_*.bam' -or -wholename './alignment.bam' | parallel --tag sam
  * ./e_mel_2/e_mel_2.bam   1619493456
  * ./e_mel_3/e_mel_3.bam   1619493352
  
- Removing "not primary" and "secondary" flags:
- 
- ```bash
-find . -name 'e_mel_*.bam' -or -wholename './alignment.bam' | parallel --tag samtools view -F 2304 -c {}
-```
