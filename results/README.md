@@ -33,3 +33,12 @@ done
  * ./e_mel_2/e_mel_2.bam 349608346
  * ./e_mel_1/e_mel_1.bam 311203429
 
+# Total number of reads
+```bash
+find . -name 'e_mel_*.bam' -or -wholename './alignment.bam' | parallel --tag samtools view -c {}
+```
+ * ./alignment.bam 1792481512
+ * ./e_mel_1/e_mel_1.bam   1619493526
+ * ./e_mel_2/e_mel_2.bam   1619493456
+ * ./e_mel_3/e_mel_3.bam   1619493352
+ 

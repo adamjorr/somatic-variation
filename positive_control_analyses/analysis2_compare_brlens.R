@@ -8,12 +8,12 @@ library(adephylo)
 
 # input files
 # must exist prior to running this script
-alignment = "~/Documents/github/somatic-variation/variant_analyses/analysis0_alignments/aln_0gaps.fa"
-true.tree = "~/Documents/github/somatic-variation/variant_analyses/tree_em1_physical_structure.phy"
-bl.meters = "~/Documents/github/somatic-variation/variant_analyses/distances_em1.csv"
+alignment = "~/Documents/github/somatic-variation/positive_control_analyses/analysis0_alignments/aln_0gaps.fa"
+true.tree = "~/Documents/github/somatic-variation/positive_control_analyses/tree_em1_physical_structure.phy"
+bl.meters = "~/Documents/github/somatic-variation/positive_control_analyses/distances_em1.csv"
 
 # make output directory
-outdir = "~/Documents/github/somatic-variation/variant_analyses/analysis2_compare_brlens/"
+outdir = "~/Documents/github/somatic-variation/positive_control_analyses/analysis2_compare_brlens/"
 dir.create(outdir)
 
 ################ Analysis 3 #####################
@@ -42,23 +42,38 @@ edges = merge(physical, parsimony, by = c('X1', 'X2'))
 p = root(true.tree.parsimony, resolve.root = T, outgroup = "M1")
 
 p2 = ggplot(edges, aes(x = physical, y = parsimony)) + 
-    geom_smooth(method='lm') + 
+    geom_smooth(method='lm', fullrange = T) + 
     geom_point(size = 3) +
     xlab("physical branch length (M)") + 
     ylab("genetic branch length (mutations)") + 
     xlim(c(0, 15))
 
 
-pdf(file.path(outdir, "brlen_correlation_figure.pdf"), width=7, height=5)
+pdf(file.path(outdir, "brlen_correlation_figure_not_forced_through_origin.pdf"), width=7, height=5)
 p2
 dev.off()
+
+
+p3 = ggplot(edges, aes(x = physical, y = parsimony)) + 
+    geom_smooth(method='lm', formula=y~x-1, fullrange = T) + 
+    geom_point(size = 3) +
+    xlab("physical branch length (M)") + 
+    ylab("genetic branch length (mutations)") + 
+    xlim(c(0, 15))
+
+
+pdf(file.path(outdir, "brlen_correlation_figure_forced_through_origin.pdf"), width=7, height=5)
+p3
+dev.off()
+
+
 
 
 # regressions forced through the origin
 s = summary(lm(edges$physical ~ edges$parsimony -1))
 s1 = summary(lm(edges$physical ~ edges$parsimony))
 
-sink(file.path(outdir, "output.txt"))
+sink(file.path(outdir, "model_fits.txt"))
 print(s)
 print(s1)
 sink()
