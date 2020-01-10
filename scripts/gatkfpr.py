@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 """
-This script reads a PED file and a VCF and extracts the sites that are
-variable in all three replicates as specified in the PED file.
+This script reads a PED file and a VCF and extracts the sites that have
+the same genotype in N replicates as specified in the PED file.
 
-The output sites are BED formatted.
+The output is a VCF.
 """
 
 import vcf
 import Bio
 import Bio.Phylo
 import argparse
+import sys
 
 def parse_pedfile(filename):
     """
@@ -42,38 +43,41 @@ def get_sample_gt(record, sample):
     """
     return frozenset(record.genotype(sample).gt_alleles)
 
-def test_vcf_record(record, replicates):
+def test_vcf_record(record, replicates, n):
     """
     Given a vcf record and a dictionary of sample names -> list of
-    replicate names, return True if all replicates of every sample have
-    matching genotypes. Otherwise return False.
+    replicate names, return True if at least n replicates of every sample
+    have matching genotypes. Otherwise return False.
     """
     if record.num_unknown > 0:
         return False
     for s in replicates.keys():
         reps = replicates[s]
-        gt0 = get_sample_gt(record, reps[0])
-        for r in reps:
-            gt = get_sample_gt(record, r)
-            if gt != gt0:
-                return False
+        gts = [get_sample_gt(record, r) for r in reps]
+        gtcounts = collections.Counter(gts)
+        if gtcounts.most_common(1)[0][1] < n:
+            return False
     else:
         return True
 
 def main():
     parser = argparse.ArgumentParser(
         description = "Remove sites that don't match the tree topology." )
-    parser.add_argument("-v","--vcf", help = "Input vcf file")
-    parser.add_argument("-p","--ped", help = "Input ped file")
+    parser.add_argument("-v","--vcf", required = True, help = "Input vcf file")
+    parser.add_argument("-p","--ped", required = True, help = "Input ped file")
+    parser.add_argument("-n", required = True, type = int, help = "Number of replicates required to match to keep site.")
     args = parser.parse_args()
 
     samples = ['M' + str(s + 1) for s in range(8)]
     replicates = parse_tree(parse_pedfile(args.ped), samples)
 
     vcfr = vcf.Reader(filename = args.vcf)
+    vcfw = vcf.Writer(sys.stdout, vcfr)
     for record in vcfr:
-        if test_vcf_record(record, replicates):
-            print(record.CHROM, record.start, record.end, sep = "\t")
+        if test_vcf_record(record, replicates, args.n):
+            vcfw.write_record(record)
+            #for BED format:
+            #print(record.CHROM, record.start, record.end, sep = "\t")
 
 if __name__ == "__main__":
     main()
