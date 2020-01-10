@@ -11,6 +11,7 @@ import Bio
 import Bio.Phylo
 import argparse
 import sys
+import collections
 
 def parse_pedfile(filename):
     """
