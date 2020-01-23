@@ -1,4 +1,5 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
+#ensure the "mut_files" directory exists in the working directory.
 import pysam
 import vcf
 import sys
@@ -55,14 +56,19 @@ def position_depth(samfile, chr, position):
 """
 scaffold, site, original_genotype, mutated_genotype, depth, branch_mutated, samples_mutated, mutation_recovered
 """
-def generate_table_line(line, muts, vcf, sam, repeats, dng = False):
+def generate_table_line(line, muts, vcf, sam, repeats, dng = False, norepfilter = False):
     l = line.rstrip().split()
     loc = [l[0], int(l[1])]
     gt = l[2:4]
     togt = set(l[4:6])
     depth = position_depth(sam, l[0], l[1])
     #in dng, there is SM/M1, SM/M2, etc. Otherwise, the samples are M1a, M2a, M3a ... etc
-    mutated_samples = (["M" + str(i) + "a" for i in range(1,9) if loc in muts[i-1]] if not dng else ["SM/M" + str(i) for i in range(1,9) if loc in muts[i-1]]) #sample names are 1-based
+    if norepfilter:
+        mutated_samples = ["M" + str(i) + j for i in range(1,9) for j in ["a","b","c"] if loc in muts[i - 1]]
+    elif dng:
+        mutated_samples = ["SM/M" + str(i) for i in range(1,9) if loc in muts[i-1]] #sample names are 1-based
+    else:
+        mutated_samples = ["M" + str(i) + "a" for i in range(1,9) if loc in muts[i-1]]
     if mutated_samples == []:
         return None
 
@@ -78,15 +84,27 @@ def generate_table_line(line, muts, vcf, sam, repeats, dng = False):
             # gts = [record.genotype(s).gt_bases for s in mutated_samples]
             # if not None in gts:
             #     gts = [set(g.split("/")) for g in gts]
-            for s in mutated_samples:
-                vcfgt = record.genotype(s).gt_bases
-                if vcfgt == None:
-                    break
-                vcfg = set(vcfgt.split("/"))
-                if vcfg != togt:
-                    break
-            else: #if we make it through the loop, we recovered the mutation
-                recovered = True
+            if norepfilter:
+                #no rep filter
+                vcfgts = [record.genotype(s).gt_bases for s in mutated_samples]
+                vcfgts = list(zip(*[iter(vcfgts)]*3)) #list of tuples of len 3
+                for s in vcfgts:
+                    if all([x == None for x in s]):
+                        break
+                    if all([set(x.split("/")) != togt for x in s]):
+                        break
+                else: #made it thru the loop, count it as recovered
+                    recovered = True
+            else:
+                for s in mutated_samples:
+                    vcfgt = record.genotype(s).gt_bases
+                    if vcfgt == None:
+                        break
+                    vcfg = set(vcfgt.split("/"))
+                    if vcfg != togt:
+                        break
+                else: #if we make it through the loop, we recovered the mutation
+                    recovered = True
 
     return loc[0], str(loc[1]), ''.join(gt), ''.join(togt), str(depth), ','.join(mutated_samples), str(recovered), str(inrepeat), str(nunknown)
 
@@ -103,6 +121,7 @@ def argparser():
     # parser.add_argument("-b","--bedfile", help = "BED file containing repeat regions")
     parser.add_argument("-r","--repeatfile", help = "File containing mutated locations in repeat regions.")
     parser.add_argument("--dng", action = 'store_true', help = "Expect dng-style VCF, where the sample is coded as SM/MX rather than MXa")
+    parser.add_argument("--norepfilter", action = 'store_true', help = "The data is not replicate filtered. If any replicate is correct, the mutation will count as detected.")
 
     args = parser.parse_args()
     return args
@@ -118,12 +137,12 @@ def main():
     repeats = load_repeats(bedfile)
 
     mutfile = "mut_files/mutfile.txt" #iterate through full list and generate table
-    print "\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered", "in_repeat_region", "num_unknown_gts"])
+    print("\t".join(["scaffold","site","original_genotype","mutated_genotype","depth","samples_mutated", "mutation_recovered", "in_repeat_region", "num_unknown_gts"]))
     with open(mutfile) as fh:
         for l in fh:
-            outline = generate_table_line(l, muts, vcf, sam, repeats, args.dng)
+            outline = generate_table_line(l, muts, vcf, sam, repeats, args.dng, args.norepfilter)
             if outline != None:
-                print "\t".join(outline)
+                print("\t".join(outline))
 
 if __name__ == '__main__':
     main()

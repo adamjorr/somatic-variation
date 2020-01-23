@@ -12,6 +12,7 @@ import Bio.Phylo
 import argparse
 import sys
 import collections
+import logging
 
 def parse_pedfile(filename):
     """
@@ -40,42 +41,70 @@ def parse_tree(treestr, samples):
 
 def get_sample_gt(record, sample):
     """
-    Given a vcf record and sample, return the sample genotype as a frozenset.
+    Given a vcf record and sample, return the sample genotype as a Counter.
     """
-    return frozenset(record.genotype(sample).gt_alleles)
+    return collections.Counter(record.genotype(sample).gt_alleles)
 
-def test_vcf_record(record, replicates, n):
+def test_vcf_record(record, replicates, n, m):
     """
     Given a vcf record and a dictionary of sample names -> list of
-    replicate names, return True if at least n replicates of every sample
-    have matching genotypes. Otherwise return False.
+    replicate names, return a modified version of the record  if at
+    least n replicates of every sample have matching genotypes. All
+    samples will be modified to the most common genotype if it is >= n and
+    >1. If n = 1, the sites will not be modified and the record will be
+    returned. Returns None when the site fails the filter.
     """
-    if record.num_unknown > 0:
-        return False
+    #if record.num_unknown > 0:
+    #    logging.debug("Site with uncalled samples skipped")
+    #    return None
     for s in replicates.keys():
         reps = replicates[s]
-        gts = [get_sample_gt(record, r) for r in reps]
+        gts = [tuple(get_sample_gt(record, r).items()) for r in reps]
         gtcounts = collections.Counter(gts)
-        if gtcounts.most_common(1)[0][1] < n:
-            return False
+        common_gt, common_num = gtcounts.most_common(1)[0]
+        if m:
+            possible_agreement = len(reps) - gtcounts[None]
+            if possible_agreement > 2:
+                n = possible_agreement/2
+            else:
+                n = possible_agreement
+        if common_num < n:
+            return None
+        elif common_num == len(reps):
+            continue
+        elif n == 1 and not m:
+            continue
+        else:
+            common_gt = list(collections.Counter(dict(common_gt)).elements())
+            for r in reps:
+                call = record.genotype(r)
+                sepchar = call.gt_phase_char()
+                call.gt_alleles = common_gt
+                gtstr = sepchar.join(common_gt) if not None in common_gt else sepchar.join(['.','.'])
+                call.data = call.data._replace(GT=gtstr)
     else:
-        return True
+        return record
 
 def main():
     parser = argparse.ArgumentParser(
         description = "Remove sites that don't match the tree topology." )
     parser.add_argument("-v","--vcf", required = True, help = "Input vcf file")
     parser.add_argument("-p","--ped", required = True, help = "Input ped file")
-    parser.add_argument("-n", required = True, type = int, help = "Number of replicates required to match to keep site.")
+    exclusive = parser.add_mutually_exclusive_group(required = True)
+    exclusive.add_argument("-n", type = int, help = "Number of replicates required to match to keep site.")
+    exclusive.add_argument("-m", action = 'store_true', help = "Majority Rule")
     args = parser.parse_args()
 
     samples = ['M' + str(s + 1) for s in range(8)]
-    replicates = parse_tree(parse_pedfile(args.ped), samples)
 
-    vcfr = vcf.Reader(filename = args.vcf)
+    treestr = parse_pedfile(args.ped)
+    replicates = parse_tree(treestr, samples)
+
+    vcfr = vcf.Reader(filename = args.vcf) if args.vcf is not '-' else vcf.Reader(sys.stdin)
     vcfw = vcf.Writer(sys.stdout, vcfr)
     for record in vcfr:
-        if test_vcf_record(record, replicates, args.n):
+        newrec = test_vcf_record(record, replicates, args.n, args.m)
+        if newrec is not None:
             vcfw.write_record(record)
             #for BED format:
             #print(record.CHROM, record.start, record.end, sep = "\t")
